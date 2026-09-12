@@ -1,0 +1,31 @@
+{
+  "name": "ternakmart",
+  "version": "1.0.0",
+  "description": "Platform E-Commerce Peternakan & Logistik Armada Mandiri",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node server/server.js",
+    "dev:client": "npm run --prefix client dev",
+    "start": "node server/server.js",
+    "build": "npm run --prefix client build",
+    "migrate": "node scripts/db-runner.js migrate",
+    "migrate:fresh": "node scripts/db-runner.js migrate:fresh",
+    "seed": "node scripts/db-runner.js seed",
+    "setup:client": "npm install --prefix client",
+    "setup:server": "npm install --prefix server"
+  },
+  "keywords": [
+    "livestock",
+    "ecommerce",
+    "logistics",
+    "qurban",
+    "ternak"
+  ],
+  "author": "Ternakmart Engineering",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.4.5"
+  }
+}

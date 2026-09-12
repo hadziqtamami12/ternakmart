@@ -1,0 +1,182 @@
+-- 001_initial_schema.sql: Skema DDL Lengkap Sistem Ternakmart
+
+CREATE TABLE IF NOT EXISTS users (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  username VARCHAR(60) UNIQUE NOT NULL,
+  email VARCHAR(120) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  phone_number VARCHAR(30) NOT NULL,
+  avatar_url TEXT,
+  address TEXT,
+  latitude DECIMAL(10, 7),
+  longitude DECIMAL(10, 7),
+  role VARCHAR(20) NOT NULL DEFAULT 'BUYER' CHECK (role IN ('BUYER', 'SELLER', 'COURIER', 'ADMIN')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS stores (
+  id VARCHAR(64) PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  store_name VARCHAR(150) NOT NULL,
+  store_slug VARCHAR(160) UNIQUE NOT NULL,
+  description TEXT,
+  farm_address TEXT NOT NULL,
+  latitude DECIMAL(10, 7) NOT NULL,
+  longitude DECIMAL(10, 7) NOT NULL,
+  farm_photo_url TEXT,
+  nib_sku_number VARCHAR(100),
+  bank_name VARCHAR(50),
+  bank_account_number VARCHAR(60),
+  bank_account_holder VARCHAR(150),
+  tier VARCHAR(30) DEFAULT 'BRONZE' CHECK (tier IN ('BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'OFFICIAL')),
+  status VARCHAR(30) DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED')),
+  rating_average DECIMAL(3, 2) DEFAULT 0.0,
+  total_reviews INT DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS animals (
+  id VARCHAR(64) PRIMARY KEY,
+  store_id VARCHAR(64) NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  category VARCHAR(30) NOT NULL CHECK (category IN ('SAPI', 'KAMBING', 'DOMBA', 'KERBAU', 'UNGGAS')),
+  breed VARCHAR(100) NOT NULL,
+  weight_kg DECIMAL(8, 2) NOT NULL,
+  age_months INT NOT NULL,
+  gender VARCHAR(20) NOT NULL CHECK (gender IN ('JANTAN', 'BETINA')),
+  teeth_poel VARCHAR(30) NOT NULL CHECK (teeth_poel IN ('BELUM_POEL', 'POEL_1', 'POEL_2')),
+  vaccination_status TEXT,
+  skkh_certificate_url TEXT,
+  skkh_verification_status BOOLEAN DEFAULT FALSE,
+  price DECIMAL(14, 2) NOT NULL,
+  is_qurban_eligible BOOLEAN DEFAULT TRUE,
+  status VARCHAR(30) DEFAULT 'AVAILABLE' CHECK (status IN ('AVAILABLE', 'BOOKED', 'IN_TRANSIT', 'DELIVERED')),
+  images JSONB,
+  video_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS carts (
+  id VARCHAR(64) PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  items_json JSONB DEFAULT '[]'::jsonb,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id VARCHAR(64) PRIMARY KEY,
+  invoice_number VARCHAR(100) UNIQUE NOT NULL,
+  buyer_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  store_id VARCHAR(64) NOT NULL REFERENCES stores(id),
+  animal_id VARCHAR(64) NOT NULL REFERENCES animals(id),
+  base_price DECIMAL(14, 2) NOT NULL,
+  store_discount DECIMAL(14, 2) DEFAULT 0.0,
+  admin_discount DECIMAL(14, 2) DEFAULT 0.0,
+  shipping_fee DECIMAL(14, 2) NOT NULL,
+  shipping_subsidy DECIMAL(14, 2) DEFAULT 0.0,
+  service_fee DECIMAL(14, 2) DEFAULT 0.0,
+  grand_total DECIMAL(14, 2) NOT NULL,
+  payment_method VARCHAR(40) NOT NULL CHECK (payment_method IN ('MANUAL_TRANSFER', 'GATEWAY')),
+  payment_status VARCHAR(40) DEFAULT 'UNPAID' CHECK (payment_status IN ('UNPAID', 'AWAITING_APPROVAL', 'PAID', 'REJECTED')),
+  payment_proof_url TEXT,
+  status VARCHAR(40) DEFAULT 'AWAITING_PAYMENT' CHECK (status IN ('AWAITING_PAYMENT', 'HEALTH_INSPECTION', 'DISPATCHED', 'IN_TRANSIT', 'DELIVERED', 'COMPLETED', 'CANCELLED')),
+  courier_id VARCHAR(64) REFERENCES users(id),
+  logistics_type VARCHAR(40) DEFAULT 'OFFICIAL_COURIER' CHECK (logistics_type IN ('MERCHANT_FLEET', 'OFFICIAL_COURIER')),
+  tracking_number VARCHAR(100),
+  delivery_address TEXT NOT NULL,
+  dest_lat DECIMAL(10, 7) NOT NULL,
+  dest_lng DECIMAL(10, 7) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS order_tracking_logs (
+  id VARCHAR(64) PRIMARY KEY,
+  order_id VARCHAR(64) NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  courier_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  latitude DECIMAL(10, 7) NOT NULL,
+  longitude DECIMAL(10, 7) NOT NULL,
+  status_label VARCHAR(255) NOT NULL,
+  notes TEXT,
+  is_rest_stop BOOLEAN DEFAULT FALSE,
+  proof_photo_url TEXT,
+  recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS order_audit_logs (
+  id VARCHAR(64) PRIMARY KEY,
+  order_id VARCHAR(64) NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  actor_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  actor_role VARCHAR(30) NOT NULL,
+  from_status VARCHAR(40) NOT NULL,
+  to_status VARCHAR(40) NOT NULL,
+  notes TEXT,
+  ip_address VARCHAR(45),
+  recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS courier_fleets (
+  id VARCHAR(64) PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  vehicle_type VARCHAR(40) NOT NULL CHECK (vehicle_type IN ('PICKUP', 'ENGKEL_TRUCK', 'KARGO_HEWAN')),
+  plate_number VARCHAR(30) NOT NULL,
+  driver_name VARCHAR(150) NOT NULL,
+  phone_number VARCHAR(30) NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS chats (
+  id VARCHAR(64) PRIMARY KEY,
+  sender_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  receiver_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  animal_context_id VARCHAR(64) REFERENCES animals(id),
+  message TEXT NOT NULL,
+  negotiated_price DECIMAL(14, 2),
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+  id VARCHAR(64) PRIMARY KEY,
+  order_id VARCHAR(64) UNIQUE NOT NULL REFERENCES orders(id),
+  user_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  store_id VARCHAR(64) NOT NULL REFERENCES stores(id),
+  animal_id VARCHAR(64) NOT NULL REFERENCES animals(id),
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  weight_match_rating INT NOT NULL CHECK (weight_match_rating BETWEEN 1 AND 5),
+  comment TEXT,
+  media_urls JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS vouchers (
+  id VARCHAR(64) PRIMARY KEY,
+  creator_id VARCHAR(64) NOT NULL REFERENCES users(id),
+  store_id VARCHAR(64) REFERENCES stores(id),
+  voucher_code VARCHAR(50) UNIQUE NOT NULL,
+  discount_type VARCHAR(20) NOT NULL CHECK (discount_type IN ('PERCENT', 'NOMINAL')),
+  discount_value DECIMAL(14, 2) NOT NULL,
+  min_purchase DECIMAL(14, 2) DEFAULT 0.0,
+  max_discount_cap DECIMAL(14, 2),
+  is_shipping_subsidy BOOLEAN DEFAULT FALSE,
+  start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  quota INT DEFAULT 100,
+  used_count INT DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  id VARCHAR(64) PRIMARY KEY,
+  key_name VARCHAR(100) UNIQUE NOT NULL,
+  value_json JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
