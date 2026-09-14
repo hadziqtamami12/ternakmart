@@ -1,5 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "npm install && npm install --prefix client && npm install --prefix server",
+  "framework": "vite",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -10,14 +15,15 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/(.*)",
-      "destination": "/client/dist/$1"
+      "source": "/((?!api|uploads).*)",
+      "destination": "/index.html"
     }
   ],
   "functions": {
     "api/index.js": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "server/**"
     }
   }
 }
