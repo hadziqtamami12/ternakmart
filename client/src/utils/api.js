@@ -1,8 +1,16 @@
 // api.js - Unified Fetch Client for Ternakmart API
 const API_BASE = '/api/v1';
 
+function getActiveToken() {
+  const isAdminPath = typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/admin');
+  if (isAdminPath) {
+    return localStorage.getItem('ternakmart_admin_token');
+  }
+  return localStorage.getItem('ternakmart_token');
+}
+
 async function request(endpoint, options = {}) {
-  const token = localStorage.getItem('ternakmart_token');
+  const token = options.token || (options.useAdminToken ? localStorage.getItem('ternakmart_admin_token') : getActiveToken());
   const headers = {
     ...(options.headers || {})
   };

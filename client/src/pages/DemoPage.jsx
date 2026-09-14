@@ -19,7 +19,7 @@ import { useAppConfig } from '../context/AppConfigContext';
 
 export default function DemoPage({ onNavigate }) {
   const { config, setDocumentTitle } = useAppConfig();
-  const { user, login, logout, isAuthenticated } = useAuth();
+  const { user, login, logout, isAuthenticated, adminLogin } = useAuth();
   const [loadingRole, setLoadingRole] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
 
@@ -31,6 +31,17 @@ export default function DemoPage({ onNavigate }) {
     setLoadingRole(roleName);
     setStatusMsg('');
     try {
+      if (roleName === 'Super Admin') {
+        const res = await adminLogin(identifier, pass);
+        if (res.success) {
+          setStatusMsg(`✓ Berhasil login sebagai ${roleName}!`);
+          setTimeout(() => {
+            onNavigate('admin');
+          }, 600);
+        }
+        return;
+      }
+
       const res = await login(identifier, pass);
       if (res.success) {
         setStatusMsg(`✓ Berhasil login sebagai ${roleName}!`);

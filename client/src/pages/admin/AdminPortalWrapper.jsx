@@ -56,7 +56,7 @@ function getAdminTabFromPath() {
 /* ─── Main Export ─────────────────────────────────────────────── */
 export default function AdminPortalWrapper({ onNavigateHome }) {
   const { config, setDocumentTitle } = useAppConfig();
-  const { user, login, isAuthenticated, isAdmin, logout } = useAuth();
+  const { adminUser, adminLogin, isAdminAuthenticated, adminLogout } = useAuth();
   const { theme, switchTheme, availableThemes, enterAdminMode, exitAdminMode } = useTheme();
 
   const [activeTab, setActiveTab] = useState(() => getAdminTabFromPath());
@@ -102,7 +102,7 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
 
   /* ── Auth handlers ── */
   const handleAdminLogout = () => {
-    logout();
+    adminLogout();
     if (window.location.pathname.toLowerCase() !== '/admin') {
       window.history.pushState({}, '', '/admin');
     }
@@ -113,11 +113,8 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
     if (e) e.preventDefault();
     setLoading(true); setError('');
     try {
-      const res = await login(username, password);
-      if (res.success && res.data.user.role !== 'ADMIN') {
-        setError('Akses ditolak. Akun ini bukan Super Admin.');
-        logout();
-      } else if (res.success) {
+      const res = await adminLogin(username, password);
+      if (res.success) {
         if (window.location.pathname.toLowerCase() !== '/admin') {
           window.history.pushState({}, '', '/admin');
         }
@@ -130,11 +127,8 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
   const handleDemoLogin = async () => {
     setLoading(true); setError('');
     try {
-      const res = await login('admin', 'Password123!');
-      if (res.success && res.data.user.role !== 'ADMIN') {
-        setError('Akses ditolak.');
-        logout();
-      } else if (res.success) {
+      const res = await adminLogin('admin', 'Password123!');
+      if (res.success) {
         if (window.location.pathname.toLowerCase() !== '/admin') {
           window.history.pushState({}, '', '/admin');
         }
@@ -155,7 +149,7 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
   };
 
   /* ────────────────────── LIVESTOCK THEMED LOGIN GATE ──────────────────────────── */
-  if (!isAuthenticated || !isAdmin) {
+  if (!isAdminAuthenticated) {
     return (
       <div className="min-h-screen bg-[#040e09] text-slate-100 flex items-center justify-center p-3 sm:p-6 lg:p-10 relative overflow-hidden font-sans">
         {/* Ambient background glows */}
@@ -469,8 +463,8 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
               <span className="text-xs text-emerald-500 font-black">A</span>
             </div>
             <div className="hidden lg:block">
-              <p className="text-[11px] font-bold text-theme-text leading-none">{user?.name || 'Admin'}</p>
-              <p className="text-[9px] text-theme-muted leading-none mt-0.5 font-mono">@{user?.username || 'admin'}</p>
+              <p className="text-[11px] font-bold text-theme-text leading-none">{adminUser?.name || 'Super Admin'}</p>
+              <p className="text-[9px] text-theme-muted leading-none mt-0.5 font-mono">@{adminUser?.username || 'admin'}</p>
             </div>
           </div>
 
@@ -496,29 +490,52 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
       {/* ── BODY ────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
 
-        {/* Mobile backdrop */}
+        {/* Mobile backdrop (covers entire screen including topbar) */}
         {isMobileSidebarOpen && (
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => setIsMobileSidebarOpen(false)}
+            aria-hidden="true"
           />
         )}
 
-        {/* ── SIDEBAR (Full height & collapsible) ───── */}
+        {/* ── SIDEBAR (Full height drawer on mobile, collapsible on desktop) ───── */}
         <aside
           className={`
-            fixed lg:sticky top-14 left-0 z-50
-            h-[calc(100vh-3.5rem)] flex flex-col
+            fixed lg:sticky inset-y-0 lg:top-14 left-0 z-[80] lg:z-30
+            h-[100dvh] lg:h-[calc(100vh-3.5rem)] flex flex-col
             bg-theme-card border-r border-theme-border backdrop-blur-xl
-            transition-all duration-200 ease-in-out flex-shrink-0
+            transition-all duration-300 ease-in-out flex-shrink-0 shadow-2xl lg:shadow-none
             ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             ${sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-64'}
-            w-64
+            w-[280px] sm:w-72
           `}
         >
+          {/* Mobile Drawer Header (Covers topbar completely on mobile) */}
+          <div className="lg:hidden flex items-center justify-between p-4 border-b border-theme-border bg-theme-bg/60 flex-shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-base shadow-md shadow-emerald-500/25 flex-shrink-0">
+                🐂
+              </div>
+              <div>
+                <p className="text-sm font-black text-theme-text leading-tight">{config.app_name}</p>
+                <p className="text-[10px] text-emerald-500 font-mono font-bold leading-tight">Super Admin Panel</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(false)}
+              className="p-1.5 rounded-xl bg-theme-bg hover:bg-theme-card border border-theme-border text-theme-muted hover:text-theme-text transition-colors"
+              title="Tutup Menu"
+              aria-label="Tutup Menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Nav links */}
-          <nav className="flex-1 overflow-y-auto pt-1 pb-4 px-2 space-y-0.5">
-            <p className={`text-[9px] font-black text-theme-muted uppercase tracking-[0.12em] px-3 pb-2 pt-0.5 ${sidebarCollapsed ? 'lg:hidden' : 'block'}`}>
+          <nav className="flex-1 overflow-y-auto overscroll-contain pt-2 pb-4 px-2 space-y-1">
+            <p className={`text-[9px] font-black text-theme-muted uppercase tracking-[0.12em] px-3 pb-2 pt-1 ${sidebarCollapsed ? 'lg:hidden' : 'block'}`}>
               Menu Utama
             </p>
 
@@ -542,7 +559,7 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
                     <p className={`text-xs leading-none truncate ${isActive ? 'font-black ' + item.color : 'font-semibold'}`}>
                       {item.label}
                     </p>
-                    <p className="text-[10px] text-theme-muted mt-0.5 leading-none truncate">{item.sub}</p>
+                    <p className="text-[10px] text-theme-muted mt-1 leading-none truncate">{item.sub}</p>
                   </div>
                   {isActive && (
                     <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${item.color.replace('text-', 'bg-')} ${sidebarCollapsed ? 'lg:hidden' : 'block'}`} />
@@ -552,11 +569,24 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
             })}
           </nav>
 
-          {/* Bottom user card */}
-          <div className="border-t border-theme-border p-2.5 flex-shrink-0">
+          {/* Bottom user & action card */}
+          <div className="border-t border-theme-border p-3 flex-shrink-0 bg-theme-card space-y-2">
+            {/* Mobile Quick Action to Marketplace */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileSidebarOpen(false);
+                onNavigateHome();
+              }}
+              className="lg:hidden w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-theme-bg hover:bg-theme-card border border-theme-border text-theme-text text-xs font-bold transition shadow-xs"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Buka Marketplace</span>
+            </button>
+
             {sidebarCollapsed && (
               <div className="hidden lg:flex flex-col items-center gap-2 p-2 rounded-2xl bg-theme-bg border border-theme-border">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-black text-emerald-500" title={user?.name || 'Admin'}>
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-black text-emerald-500" title={adminUser?.name || 'Super Admin'}>
                   A
                 </div>
                 <button
@@ -574,7 +604,7 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
                   🐂
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-extrabold text-theme-text leading-none truncate">{user?.name || 'Super Admin'}</p>
+                  <p className="text-[11px] font-extrabold text-theme-text leading-none truncate">{adminUser?.name || 'Super Admin'}</p>
                   <p className="text-[9px] text-emerald-500 font-mono mt-0.5 leading-none font-bold">ROLE: ADMIN</p>
                 </div>
               </div>

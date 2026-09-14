@@ -117,6 +117,15 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Portal role isolation check
+    const isPortalAdmin = req.body.portal === 'admin' || (req.headers['x-auth-portal'] && req.headers['x-auth-portal'].toLowerCase() === 'admin');
+    if (isPortalAdmin && user.role !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: `Akses ditolak. Akun '${user.username}' (${user.role}) bukan administrator. Halaman login ini khusus untuk Super Admin.`
+      });
+    }
+
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN
     });
