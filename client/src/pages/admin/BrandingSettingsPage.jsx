@@ -23,7 +23,8 @@ import {
   ShieldCheck,
   Monitor,
   Smartphone,
-  Search
+  Search,
+  ChevronRight
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import { useAppConfig } from '../../context/AppConfigContext';

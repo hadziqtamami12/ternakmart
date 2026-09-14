@@ -6,7 +6,7 @@ const DEFAULT_PLATFORM_IDENTITY = {
   app_name: 'Ternakmart',
   tagline: 'Platform E-Commerce Peternakan & Logistik Armada Mandiri Terpercaya',
   app_logo_url: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=128&auto=format&fit=crop&q=80',
-  app_favicon_url: 'https://cdn-icons-png.flaticon.com/512/2395/2395796.png',
+  app_favicon_url: '/favicon.ico',
   active_theme: 'emerald-agro',
   timezone_offset: 'Asia/Jakarta',
   timezone_label: 'WIB (UTC+7)',

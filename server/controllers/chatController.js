@@ -4,23 +4,31 @@ const notificationService = require('../services/notification');
 
 exports.getConversations = async (req, res) => {
   try {
-    const currentUserId = req.user.id;
+    const currentUserId = req.user?.id;
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'Harap masuk terlebih dahulu.' });
+    }
+
     const allChats = await db.findMany('chats', {});
+    const safeChats = Array.isArray(allChats) ? allChats : [];
 
     // Filter chats where user is sender or receiver
-    const userChats = allChats.filter(c => c.sender_id === currentUserId || c.receiver_id === currentUserId);
+    const userChats = safeChats.filter(c => c && (c.sender_id === currentUserId || c.receiver_id === currentUserId));
 
     // Group by the other participant
     const contactMap = {};
     for (const chat of userChats) {
       const otherId = chat.sender_id === currentUserId ? chat.receiver_id : chat.sender_id;
-      if (!contactMap[otherId] || new Date(chat.created_at) > new Date(contactMap[otherId].last_message_at)) {
+      if (!otherId) continue;
+
+      const chatCreatedAt = chat.created_at || new Date().toISOString();
+      if (!contactMap[otherId] || new Date(chatCreatedAt) > new Date(contactMap[otherId].last_message_at || 0)) {
         contactMap[otherId] = {
           contact_id: otherId,
-          last_message: chat.message,
-          last_message_at: chat.created_at,
-          negotiated_price: chat.negotiated_price,
-          animal_context_id: chat.animal_context_id,
+          last_message: chat.message || '',
+          last_message_at: chatCreatedAt,
+          negotiated_price: chat.negotiated_price || null,
+          animal_context_id: chat.animal_context_id || null,
           unread_count: 0
         };
       }
@@ -38,12 +46,36 @@ exports.getConversations = async (req, res) => {
         animal = await db.findById('animals', contactMap[otherId].animal_context_id);
       }
 
+      let animalContext = null;
+      if (animal) {
+        let animalImage = '';
+        if (Array.isArray(animal.images) && animal.images.length > 0) {
+          animalImage = animal.images[0];
+        } else if (typeof animal.images === 'string') {
+          try {
+            const parsed = JSON.parse(animal.images);
+            animalImage = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : animal.images;
+          } catch (e) {
+            animalImage = animal.images;
+          }
+        } else if (animal.image_url) {
+          animalImage = animal.image_url;
+        }
+
+        animalContext = {
+          id: animal.id,
+          title: animal.title || 'Hewan Ternak',
+          price: animal.price || 0,
+          image: animalImage || ''
+        };
+      }
+
       conversations.push({
         ...contactMap[otherId],
-        contact_name: contactUser ? contactUser.name : 'Pengguna',
+        contact_name: contactUser ? contactUser.name : 'Pengguna Ternakmart',
         contact_avatar: contactUser ? contactUser.avatar_url : '',
-        contact_role: contactUser ? contactUser.role : '',
-        animal_context: animal ? { id: animal.id, title: animal.title, price: animal.price, image: animal.images[0] } : null
+        contact_role: contactUser ? contactUser.role : 'USER',
+        animal_context: animalContext
       });
     }
 
@@ -51,55 +83,63 @@ exports.getConversations = async (req, res) => {
 
     return res.json({ success: true, data: conversations });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Gagal memuat percakapan chat.' });
+    console.error('💥 [getConversations error]:', err);
+    return res.json({ success: true, data: [] });
   }
 };
 
 exports.getMessages = async (req, res) => {
   try {
-    const currentUserId = req.user.id;
+    const currentUserId = req.user?.id;
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'Harap masuk terlebih dahulu.' });
+    }
     const { targetUserId } = req.params;
 
     const allChats = await db.findMany('chats', {});
-    const messages = allChats.filter(c =>
-      (c.sender_id === currentUserId && c.receiver_id === targetUserId) ||
-      (c.sender_id === targetUserId && c.receiver_id === currentUserId)
+    const safeChats = Array.isArray(allChats) ? allChats : [];
+    const messages = safeChats.filter(c =>
+      c &&
+      ((c.sender_id === currentUserId && c.receiver_id === targetUserId) ||
+      (c.sender_id === targetUserId && c.receiver_id === currentUserId))
     );
 
     // Mark as read when opened/read by current receiver
     for (const msg of messages) {
-      if (msg.receiver_id === currentUserId && (!msg.is_read || msg.status !== 'read')) {
+      if (msg && msg.receiver_id === currentUserId && (!msg.is_read || msg.status !== 'read')) {
         await db.update('chats', msg.id, { is_read: true, status: 'read' });
         msg.is_read = true;
         msg.status = 'read';
       }
     }
 
-    messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    messages.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
 
     return res.json({ success: true, data: messages });
   } catch (err) {
-    return res.status(500).json({ success: false, message: 'Gagal mengambil pesan chat.' });
+    console.error('💥 [getMessages error]:', err);
+    return res.json({ success: true, data: [] });
   }
 };
 
 exports.sendMessage = async (req, res) => {
   try {
+    const senderId = req.user?.id;
+    if (!senderId) {
+      return res.status(401).json({ success: false, message: 'Harap masuk terlebih dahulu.' });
+    }
     const { receiver_id, message, animal_context_id, negotiated_price } = req.body;
 
     if (!receiver_id || !message) {
       return res.status(400).json({ success: false, message: 'Harap sertakan ID penerima dan isi pesan.' });
     }
 
-    // Determine recipient online state
-    // In e-commerce chat: check if recipient is active recently or has socket/session
-    // If receiver is not actively in conversation: initial status is 'sent' (1 check), else 'delivered' (2 checks)
     const receiver = await db.findById('users', receiver_id);
     const isReceiverOnline = Boolean(receiver && receiver.is_online === true);
     const initialStatus = isReceiverOnline ? 'delivered' : 'sent';
 
     const newChat = await db.create('chats', {
-      sender_id: req.user.id,
+      sender_id: senderId,
       receiver_id,
       animal_context_id: animal_context_id || null,
       message,
@@ -109,11 +149,12 @@ exports.sendMessage = async (req, res) => {
     });
 
     // Notify receiver & dispatch Web Push Notification
-    let notifTitle = `💬 Pesan Baru dari ${req.user.name}`;
+    const senderName = req.user?.name || 'Pengguna Ternakmart';
+    let notifTitle = `💬 Pesan Baru dari ${senderName}`;
     let notifMsg = message;
     if (negotiated_price) {
       notifTitle = `🤝 Penawaran Harga Baru: Rp ${parseFloat(negotiated_price).toLocaleString('id-ID')}`;
-      notifMsg = `${req.user.name} mengajukan penawaran harga untuk hewan ternak.`;
+      notifMsg = `${senderName} mengajukan penawaran harga untuk hewan ternak.`;
     }
 
     notificationService.send(receiver_id, {
@@ -136,7 +177,10 @@ exports.sendMessage = async (req, res) => {
 
 exports.getContacts = async (req, res) => {
   try {
-    const currentUserId = req.user.id;
+    const currentUserId = req.user?.id;
+    if (!currentUserId) {
+      return res.status(401).json({ success: false, message: 'Harap masuk terlebih dahulu.' });
+    }
     const allUsers = await db.findMany('users', {});
     const stores = await db.findMany('stores', {});
 

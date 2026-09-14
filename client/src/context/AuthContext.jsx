@@ -1,15 +1,22 @@
-// AuthContext.jsx - User Authentication & Session Management
+// AuthContext.jsx - User Authentication & Session Management (Isolated Admin & Customer Sessions)
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../utils/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  // ── Customer / Marketplace Session ──────────────────────────────────
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('ternakmart_token') || null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
+  // ── Admin Session (Strictly isolated to /admin) ──────────────────────
+  const [adminUser, setAdminUser] = useState(null);
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('ternakmart_admin_token') || null);
+  const [adminLoading, setAdminLoading] = useState(true);
+
+  // Validate Customer User Session
+  const fetchCustomerUser = async () => {
     const currentToken = localStorage.getItem('ternakmart_token');
     if (!currentToken) {
       setUser(null);
@@ -18,27 +25,68 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const res = await api.get('/auth/me');
+      const res = await api.get('/auth/me', {
+        headers: { 'Authorization': `Bearer ${currentToken}` }
+      });
       if (res.success && res.data) {
-        setUser(res.data);
+        // Admin credentials should never occupy marketplace customer session
+        if (res.data.role === 'ADMIN') {
+          localStorage.removeItem('ternakmart_token');
+          setUser(null);
+        } else {
+          setUser(res.data);
+        }
       } else {
         logout();
       }
     } catch (err) {
-      console.warn('Session expired or invalid token:', err.message);
       logout();
     } finally {
       setLoading(false);
     }
   };
 
+  // Validate Admin User Session
+  const fetchAdminUser = async () => {
+    const currentAdminToken = localStorage.getItem('ternakmart_admin_token');
+    if (!currentAdminToken) {
+      setAdminUser(null);
+      setAdminLoading(false);
+      return;
+    }
+
+    try {
+      const res = await api.get('/auth/me', {
+        headers: { 'Authorization': `Bearer ${currentAdminToken}` }
+      });
+      if (res.success && res.data && res.data.role === 'ADMIN') {
+        setAdminUser(res.data);
+      } else {
+        adminLogout();
+      }
+    } catch (err) {
+      adminLogout();
+    } finally {
+      setAdminLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchUser();
+    fetchCustomerUser();
   }, [token]);
 
+  useEffect(() => {
+    fetchAdminUser();
+  }, [adminToken]);
+
+  // ── Customer Auth Actions ──────────────────────────────────────────
   const login = async (identifier, password) => {
     const res = await api.post('/auth/login', { identifier, password });
     if (res.success && res.data) {
+      // If an admin logs in on the regular customer portal, prevent taking over customer session
+      if (res.data.user.role === 'ADMIN') {
+        throw new Error('Akun Administrator tidak dapat masuk melalui portal belanja pelanggan. Silakan gunakan tautan /admin.');
+      }
       localStorage.setItem('ternakmart_token', res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
@@ -70,22 +118,59 @@ export function AuthProvider({ children }) {
     return res;
   };
 
+  // ── Admin Auth Actions ─────────────────────────────────────────────
+  const adminLogin = async (identifier, password) => {
+    const res = await api.post('/auth/login', {
+      identifier,
+      password,
+      portal: 'admin'
+    }, {
+      headers: { 'X-Auth-Portal': 'admin' }
+    });
+
+    if (res.success && res.data) {
+      if (res.data.user.role !== 'ADMIN') {
+        throw new Error(`Akses ditolak. Akun '${res.data.user.username}' (${res.data.user.role}) bukan administrator. Halaman login ini khusus untuk Super Admin.`);
+      }
+      localStorage.setItem('ternakmart_admin_token', res.data.token);
+      setAdminToken(res.data.token);
+      setAdminUser(res.data.user);
+    }
+    return res;
+  };
+
+  const adminLogout = () => {
+    localStorage.removeItem('ternakmart_admin_token');
+    setAdminToken(null);
+    setAdminUser(null);
+  };
+
   return (
     <AuthContext.Provider
       value={{
+        // Marketplace Customer Session
         user,
         token,
         loading,
-        isAuthenticated: Boolean(user),
-        isAdmin: user?.role === 'ADMIN',
+        isAuthenticated: Boolean(user && user.role !== 'ADMIN'),
         isSeller: user?.role === 'SELLER',
         isCourier: user?.role === 'COURIER',
         isBuyer: user?.role === 'BUYER',
         login,
         register,
         logout,
-        refreshUser: fetchUser,
-        updateProfile
+        refreshUser: fetchCustomerUser,
+        updateProfile,
+
+        // Admin Session (Strictly isolated to /admin)
+        adminUser,
+        adminToken,
+        adminLoading,
+        isAdminAuthenticated: Boolean(adminUser && adminUser.role === 'ADMIN'),
+        isAdmin: Boolean(adminUser && adminUser.role === 'ADMIN'),
+        adminLogin,
+        adminLogout,
+        refreshAdminUser: fetchAdminUser
       }}
     >
       {children}
