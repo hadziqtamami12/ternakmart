@@ -285,7 +285,7 @@ export default function BuyerOrdersPage({ onNavigate, onOpenTracking }) {
 
       {/* Upload Proof Modal with Strict 5MB Validation */}
       {activeUploadOrder && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-theme-card border border-theme-border rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
               <div>
@@ -356,7 +356,7 @@ export default function BuyerOrdersPage({ onNavigate, onOpenTracking }) {
 
       {/* Review Modal with 1-5 Weight Match Rating */}
       {activeReviewOrder && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-theme-card border border-theme-border rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
               <h3 className="text-base font-extrabold text-theme-text">Ulasan & Kesesuaian Bobot Riil</h3>

@@ -1,5 +1,6 @@
-// app.js - Express Application Setup & Route Assembly
-require('dotenv').config();
+try {
+  require('dotenv').config();
+} catch (e) {}
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -7,10 +8,12 @@ const db = require('./database/adapter');
 
 const app = express();
 
-// Database initialization
-db.connect().catch(err => {
-  console.error('Failed to initialize database adapter:', err);
-});
+// Lazy Database Initialization: Non-blocking graceful startup
+if (db && typeof db.connect === 'function') {
+  db.connect().catch(err => {
+    console.warn('⚠️ [DB Warning] Lazy DB connection deferred, running in resilient fallback mode:', err.message);
+  });
+}
 
 // Middlewares
 app.use(cors({
@@ -41,6 +44,10 @@ const settingRoutes = require('./routes/settingRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const addressRoutes = require('./routes/addressRoutes');
+const badgeRoutes = require('./routes/badgeRoutes');
+const shippingSettingRoutes = require('./routes/shippingSettingRoutes');
+const heroBannerRoutes = require('./routes/heroBannerRoutes');
 
 // API Mounts
 const apiRouter = express.Router();
@@ -59,6 +66,10 @@ apiRouter.use('/settings', settingRoutes);
 apiRouter.use('/audit-logs', auditRoutes);
 apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/uploads', uploadRoutes);
+apiRouter.use('/addresses', addressRoutes);
+apiRouter.use('/badges', badgeRoutes);
+apiRouter.use('/shipping-settings', shippingSettingRoutes);
+apiRouter.use('/hero-banners', heroBannerRoutes);
 
 // Health check
 apiRouter.get('/health', async (req, res) => {

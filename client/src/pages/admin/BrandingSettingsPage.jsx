@@ -20,118 +20,396 @@ import {
   ArrowRight,
   MapPin,
   Star,
-  ShieldCheck
+  ShieldCheck,
+  Monitor,
+  Smartphone,
+  Search
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import { useAppConfig } from '../../context/AppConfigContext';
 import { useTheme } from '../../context/ThemeContext';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
 
-/* ─── Theme Preview Component ─── */
+/* ─── Realistic Landing Page Theme Preview (Desktop & Mobile) ─── */
 function ThemePreview({ themeId, availableThemes }) {
+  const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile'
   const t = availableThemes.find(x => x.id === themeId) || availableThemes[0];
-  const bg = t.preview?.[0] || t.bg || '#f8fafc';
-  const primary = t.preview?.[1] || t.color || '#059669';
-  const accent = t.preview?.[2] || '#f59e0b';
+  const bg = t.preview?.[0] || t.bg || '#F0FDF4';
+  const primary = t.preview?.[1] || t.color || '#15803D';
+  const accent = t.preview?.[2] || '#86EFAC';
 
   return (
-    <div 
-      className="rounded-xl overflow-hidden border border-slate-700"
-      style={{ background: bg }}
-    >
-      <div className="p-3 space-y-3" style={{ color: primary }}>
-        {/* Fake Nav Bar */}
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-white" style={{ background: primary }}>🐂</div>
-            <span className="font-black">Ternakmart</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-white/80">Katalog</span>
-            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-white/80">Masuk</span>
-            <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-white text-[10px]" style={{ background: primary }}>🛒</div>
-          </div>
-        </div>
-
-        {/* Hero Section Mockup */}
-        <div className="space-y-2 pt-2">
-          <div className="flex items-center gap-1.5 px-1">
-            <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider text-white" style={{ background: primary }}>
-              {t.preview?.[2] ? 'PROMO' : 'PROMO'}
-            </span>
-            <span className="px-1.5 py-0.5 rounded text-[8px] font-bold text-white/80" style={{ background: accent }}>Kupon: QURBANBERKAH</span>
-          </div>
-          <h1 className="font-black leading-tight text-lg sm:text-xl" style={{ color: primary }}>
-            Diskon Spesial Ternak Hingga Rp 1.500.000
-          </h1>
-          <p className="text-[11px] leading-relaxed" style={{ color: primary }}>
-            Free Titip Rawat & Pakan Konsentrat sampai H-3 Idul Adha. Bebas Ongkir Armada Khusus Jabodetabek & Bandung.
-          </p>
-          <button className="mt-2 px-4 py-2 rounded-xl text-xs font-black text-white flex items-center gap-1.5" style={{ background: primary }}>
-            <span>Beli Ternak Qurban</span>
-            <ArrowRight className="w-3 h-3" />
+    <div className="space-y-3">
+      {/* Switcher Controls: Desktop vs Mobile */}
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[11px] font-bold text-slate-400">Mode Pratinjau Tampilan:</span>
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
+          <button
+            type="button"
+            onClick={() => setViewMode('desktop')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              viewMode === 'desktop'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Monitor className="w-3.5 h-3.5" />
+            <span>Desktop (16:9)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('mobile')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              viewMode === 'mobile'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Mobile (375px)</span>
           </button>
         </div>
+      </div>
 
-        {/* Quick Category Row */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
-          {[
-            { icon: '🐂', label: 'Sapi Qurban' },
-            { icon: '🐑', label: 'Domba Garut' },
-            { icon: '🐐', label: 'Kambing Etawa' },
-            { icon: '🍲', label: 'Paket Aqiqah' },
-          ].map((cat, i) => (
-            <div key={i} className="flex-shrink-0 px-2.5 py-1.5 rounded-xl text-center min-w-[80px]" style={{ background: primary + '15', border: `1px solid ${primary}40` }}>
-              <div className="text-xl mb-0.5">{cat.icon}</div>
-              <span className="text-[9px] font-bold" style={{ color: primary }}>{cat.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Flash Sale Card Mockup */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          <div className="flex-shrink-0 w-40 rounded-lg overflow-hidden border" style={{ borderColor: primary + '40', background: 'rgba(255,255,255,0.8)' }}>
-            <div className="h-16 flex items-center justify-center" style={{ background: primary + '10' }}>
-              <span className="text-2xl">🐂</span>
-            </div>
-            <div className="p-2 space-y-1">
-              <span className="text-[9px] font-bold truncate block" style={{ color: primary }}>Simental Super 480kg</span>
-              <div className="flex items-center gap-1">
-                <span className="text-[9px] line-through" style={{ color: primary }}>Rp 25.000.000</span>
-                <span className="text-[10px] font-black" style={{ color: '#e11d48' }}>Rp 22.500.000</span>
-                <span className="px-1 py-0.5 rounded text-[7px] font-black text-white" style={{ background: '#e11d48' }}>HEMAT 10%</span>
+      {/* Frame Container */}
+      <div className="flex justify-center w-full overflow-hidden bg-slate-950/80 rounded-2xl p-2 sm:p-4 border border-slate-800">
+        {viewMode === 'desktop' ? (
+          /* DESKTOP MOCKUP */
+          <div
+            className="w-full max-w-4xl rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl transition-all"
+            style={{ background: bg }}
+          >
+            {/* Browser Header Bar */}
+            <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
               </div>
-              <button className="w-full py-1.5 rounded text-[9px] font-bold text-white mt-1" style={{ background: primary }}>
-                + Keranjang
-              </button>
-            </div>
-          </div>
-          <div className="flex-shrink-0 w-40 rounded-lg overflow-hidden border" style={{ borderColor: primary + '40', background: 'rgba(255,255,255,0.8)' }}>
-            <div className="h-16 flex items-center justify-center" style={{ background: primary + '10' }}>
-              <span className="text-2xl">🐑</span>
-            </div>
-            <div className="p-2 space-y-1">
-              <span className="text-[9px] font-bold truncate block" style={{ color: primary }}>Domba Garut 120kg</span>
-              <div className="flex items-center gap-1">
-                <span className="text-[9px] line-through" style={{ color: primary }}>Rp 15.000.000</span>
-                <span className="text-[10px] font-black" style={{ color: '#e11d48' }}>Rp 13.500.000</span>
-                <span className="px-1 py-0.5 rounded text-[7px] font-black text-white" style={{ background: '#e11d48' }}>HEMAT 10%</span>
+              <div className="flex-1 max-w-xs mx-auto bg-slate-950/80 text-[10px] text-slate-400 rounded-md px-2 py-0.5 text-center font-mono truncate">
+                https://ternakmart.id
               </div>
-              <button className="w-full py-1.5 rounded text-[9px] font-bold text-white mt-1" style={{ background: primary }}>
-                + Keranjang
-              </button>
+            </div>
+
+            {/* Desktop Navbar (Adaptive) */}
+            <div className="px-5 py-3 border-b border-black/5 flex items-center justify-between backdrop-blur-md bg-white/70">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ background: primary }}>
+                    🐂
+                  </div>
+                  <span className="font-black text-sm tracking-tight" style={{ color: primary }}>
+                    TernakMart
+                  </span>
+                </div>
+                {/* Search box */}
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-black/10 bg-white/80 text-slate-400 text-[11px] w-64">
+                  <Search className="w-3.5 h-3.5" />
+                  <span className="truncate">Cari sapi limosin, domba Garut...</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs font-bold">
+                <span style={{ color: primary }}>Katalog</span>
+                <span className="text-slate-600">Buka Toko</span>
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[11px] shadow-sm relative" style={{ background: primary }}>
+                  🛒
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center font-black">2</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Hero Section - 100% Faithful to HomePage */}
+            <div className="relative h-72 sm:h-80 overflow-hidden flex items-center px-6 sm:px-10 text-white select-none">
+              <img
+                src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=1920&auto=format&fit=crop&q=85"
+                alt="Hero"
+                className="absolute inset-0 w-full h-full object-cover -z-10"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/75 -z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent -z-10" />
+
+              <div className="max-w-xl space-y-3.5">
+                {/* Real Badge row from HomePage */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    FESTIVAL AKBAR QURBAN 1447H
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider backdrop-blur-md">
+                    🐂 SAPI & DOMBA SUPER
+                  </span>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-400/30 text-amber-300 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-md">
+                    Kupon: QURBANBERKAH
+                  </span>
+                </div>
+
+                <h1 className="text-xl sm:text-3xl font-black tracking-tight text-white leading-[1.15] drop-shadow-md">
+                  Diskon Spesial Ternak Hingga Rp 1.500.000
+                </h1>
+
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-lg line-clamp-2 drop-shadow">
+                  Pesan hewan qurban bersertifikat sehat SKKH resmi. Gratis biaya perawatan & pakan sampai Hari Raya Idul Adha 1447H.
+                </p>
+
+                {/* Dual CTA buttons matching HomePage */}
+                <div className="flex items-center gap-2.5 pt-1">
+                  <button
+                    className="px-5 py-2.5 rounded-2xl text-slate-950 font-black text-xs flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all"
+                    style={{ background: primary }}
+                  >
+                    <span>Beli Ternak Qurban</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold text-xs backdrop-blur-md shadow-md flex items-center gap-2">
+                    <span>Jelajahi Semua Hewan</span>
+                    <ChevronRight className="w-4 h-4 text-white/70" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Slider Dots */}
+              <div className="absolute bottom-4 right-6 flex items-center gap-2 z-20 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15">
+                <div className="h-2 w-7 rounded-full shadow-sm" style={{ background: primary }} />
+                <div className="h-2 w-2 rounded-full bg-white/40" />
+                <div className="h-2 w-2 rounded-full bg-white/40" />
+              </div>
+            </div>
+
+            {/* Category Quick Row */}
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-sm tracking-tight" style={{ color: primary }}>Kategori Unggulan</h3>
+                  <p className="text-[10px] text-slate-500">Pilihan ternak qurban & bibit unggul siap kirim</p>
+                </div>
+                <span className="text-xs font-bold cursor-pointer" style={{ color: primary }}>Lihat Semua →</span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { name: 'Sapi Simental & Limosin', count: '142 Ekor', icon: '🐂' },
+                  { name: 'Domba Garut & Merino', count: '310 Ekor', icon: '🐑' },
+                  { name: 'Kambing Etawa & Boer', count: '198 Ekor', icon: '🐐' },
+                  { name: 'Paket Qurban & Aqiqah', count: 'Siap Potong', icon: '🍲' }
+                ].map((c, i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-2xl border transition-all text-center flex flex-col items-center justify-center gap-1 bg-white/80 shadow-sm hover:shadow-md"
+                    style={{ borderColor: primary + '25' }}
+                  >
+                    <span className="text-2xl">{c.icon}</span>
+                    <span className="font-extrabold text-[11px] truncate w-full text-slate-800">{c.name}</span>
+                    <span className="text-[9px] font-bold" style={{ color: primary }}>{c.count}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Sample Product Cards Grid */}
+              <div className="grid grid-cols-3 gap-3 pt-2">
+                {[
+                  {
+                    title: 'Sapi Simental Bobot 540kg',
+                    store: 'Barokah Farm · Bogor',
+                    price: 'Rp 27.500.000',
+                    img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400'
+                  },
+                  {
+                    title: 'Domba Garut Tanduk Mewah',
+                    store: 'Kandang Garut Prima · Garut',
+                    price: 'Rp 6.800.000',
+                    img: 'https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=400'
+                  },
+                  {
+                    title: 'Kambing Etawa Super Susu',
+                    store: 'Peternakan Jaya · Sukabumi',
+                    price: 'Rp 4.500.000',
+                    img: 'https://images.unsplash.com/photo-1524024973431-2ad916746881?w=400'
+                  }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-2xl overflow-hidden border bg-white/90 shadow-sm flex flex-col justify-between"
+                    style={{ borderColor: primary + '20' }}
+                  >
+                    <div className="relative h-28 w-full overflow-hidden">
+                      <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500 text-white shadow-sm">
+                        SKKH Aktif
+                      </span>
+                    </div>
+                    <div className="p-3 space-y-1">
+                      <p className="font-extrabold text-xs truncate text-slate-800">{item.title}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{item.store}</p>
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="font-black text-xs" style={{ color: primary }}>{item.price}</span>
+                        <button className="px-2 py-1 rounded-lg text-white text-[10px] font-bold" style={{ background: primary }}>
+                          + Beli
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* MOBILE MOCKUP (Smartphone Frame) */
+          <div
+            className="w-[360px] rounded-[2.5rem] overflow-hidden border-4 border-slate-800 shadow-2xl relative"
+            style={{ background: bg }}
+          >
+            {/* Phone Notch */}
+            <div className="h-5 bg-slate-900 flex items-center justify-center relative">
+              <div className="w-24 h-3 bg-black rounded-b-xl flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-800 mr-2" />
+                <div className="w-8 h-1 rounded-full bg-slate-800" />
+              </div>
+            </div>
 
-        {/* Reviews Stars */}
-        <div className="pt-2 border-t flex items-center gap-1" style={{ borderColor: primary + '40', color: primary }}>
-          <span className="text-[10px] font-bold">Rating:</span>
-          <div className="flex text-amber-400">
-            {'★★★★★'}
+            {/* Mobile Topbar */}
+            <div className="px-4 py-2.5 flex items-center justify-between border-b border-black/5 bg-white/80 backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: primary }}>
+                  🐂
+                </div>
+                <span className="font-black text-xs" style={{ color: primary }}>TernakMart</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-xs">
+                  <Search className="w-3 h-3" />
+                </div>
+                <div className="w-6 h-6 rounded-lg text-white flex items-center justify-center text-[10px] relative" style={{ background: primary }}>
+                  🛒
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-rose-500 text-white text-[7px] flex items-center justify-center font-black">2</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Hero - Matching HomePage Mobile */}
+            <div className="relative h-56 overflow-hidden flex items-end p-4 text-white select-none">
+              <img
+                src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=85"
+                alt="Hero"
+                className="absolute inset-0 w-full h-full object-cover -z-10"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/75 -z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent -z-10" />
+
+              <div className="space-y-2 w-full">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-[8px] font-black uppercase tracking-wider backdrop-blur-md">
+                    <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
+                    FESTIVAL QURBAN 1447H
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-white/15 border border-white/20 text-white">
+                    🐂 SAPI & DOMBA
+                  </span>
+                </div>
+                <h2 className="text-sm font-black leading-tight text-white drop-shadow">
+                  Diskon Spesial Ternak Hingga Rp 1.500.000
+                </h2>
+                <p className="text-[10px] text-slate-200 line-clamp-1">
+                  Pesan hewan qurban bersertifikat SKKH resmi gratis rawat pakan.
+                </p>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    className="px-3 py-1.5 rounded-xl text-[10px] font-black text-slate-950 shadow-md flex items-center gap-1"
+                    style={{ background: primary }}
+                  >
+                    <span>Beli Qurban</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                  <button className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-white bg-white/20 backdrop-blur-md">
+                    Jelajahi
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile slider dots */}
+              <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/20">
+                <div className="h-1.5 w-4 rounded-full" style={{ background: primary }} />
+                <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
+                <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
+              </div>
+            </div>
+
+            {/* Mobile Categories Scroll */}
+            <div className="p-3 space-y-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider block" style={{ color: primary }}>
+                Kategori Hewan
+              </span>
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {[
+                  { name: 'Sapi', icon: '🐂' },
+                  { name: 'Domba', icon: '🐑' },
+                  { name: 'Kambing', icon: '🐐' },
+                  { name: 'Aqiqah', icon: '🍲' }
+                ].map((cat, i) => (
+                  <div
+                    key={i}
+                    className="flex-shrink-0 px-3 py-2 rounded-xl text-center min-w-[65px] bg-white/90 border shadow-xs"
+                    style={{ borderColor: primary + '30' }}
+                  >
+                    <span className="text-base block">{cat.icon}</span>
+                    <span className="text-[9px] font-bold text-slate-800">{cat.name}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile 2-Column Catalog Grid */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {[
+                  {
+                    title: 'Simental 540kg',
+                    price: 'Rp 27.5 Jt',
+                    img: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=240'
+                  },
+                  {
+                    title: 'Domba Garut Super',
+                    price: 'Rp 6.8 Jt',
+                    img: 'https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=240'
+                  }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl overflow-hidden border bg-white/95 shadow-xs"
+                    style={{ borderColor: primary + '20' }}
+                  >
+                    <img src={item.img} alt={item.title} className="w-full h-20 object-cover" />
+                    <div className="p-2 space-y-0.5">
+                      <p className="font-bold text-[10px] truncate text-slate-800">{item.title}</p>
+                      <p className="font-black text-[11px]" style={{ color: primary }}>{item.price}</p>
+                      <button className="w-full py-1 rounded-md text-[9px] font-bold text-white mt-1" style={{ background: primary }}>
+                        + Keranjang
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Bottom Dock */}
+            <div className="px-4 py-2 border-t border-black/5 bg-white/95 flex items-center justify-between text-center">
+              <div className="flex flex-col items-center gap-0.5 cursor-pointer">
+                <span className="text-xs" style={{ color: primary }}>🏠</span>
+                <span className="text-[8px] font-bold" style={{ color: primary }}>Beranda</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 cursor-pointer text-slate-400">
+                <span className="text-xs">📋</span>
+                <span className="text-[8px] font-medium">Katalog</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 cursor-pointer text-slate-400">
+                <span className="text-xs">📦</span>
+                <span className="text-[8px] font-medium">Pesanan</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 cursor-pointer text-slate-400">
+                <span className="text-xs">👤</span>
+                <span className="text-[8px] font-medium">Akun</span>
+              </div>
+            </div>
           </div>
-          <span className="text-[10px]">5.0/5.0</span>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -248,27 +526,27 @@ export default function BrandingSettingsPage({ onBack }) {
         </button>
       )}
 
-      <div className="bg-[#0d1421] border border-slate-800/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-        <div className="border-b border-slate-800/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-theme-card border border-theme-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="border-b border-theme-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-              <Sliders className="w-6 h-6 text-emerald-400" />
+            <h1 className="text-xl sm:text-2xl font-black text-theme-text flex items-center gap-2">
+              <Sliders className="w-6 h-6 text-theme-primary" />
               <span>Pengaturan Website, Ekspedisi & Sosmed</span>
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-theme-muted mt-0.5">
               Sesuaikan identitas aplikasi, tarif armada per km, integrasi ekspedisi API, kontak CS, dan media sosial.
             </p>
           </div>
 
           {saveSuccess && (
-            <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5 animate-in fade-in">
+            <div className="px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1.5 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4" /> Berhasil Diperbarui!
             </div>
           )}
         </div>
 
         {uploadError && (
-          <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium flex items-center gap-2">
+          <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{uploadError}</span>
           </div>
@@ -277,40 +555,40 @@ export default function BrandingSettingsPage({ onBack }) {
         <form onSubmit={handleSave} className="space-y-6 text-xs">
           {/* Section 1: Identitas Website */}
           <div className="space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-theme-primary flex items-center gap-1.5">
               <Globe className="w-4 h-4" /> Identitas Website & Brand
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Nama Aplikasi / Marketplace</label>
+                <label className="font-bold text-theme-text block mb-1">Nama Aplikasi / Marketplace</label>
                 <input
                   type="text"
                   required
                   value={appName}
                   onChange={(e) => setAppName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Tagline Slogan</label>
+                <label className="font-bold text-theme-text block mb-1">Tagline Slogan</label>
                 <input
                   type="text"
                   value={tagline}
                   onChange={(e) => setTagline(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
 
               {/* Logo Upload Widget */}
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Logo Aplikasi</label>
+                <label className="font-bold text-theme-text block mb-1">Logo Aplikasi</label>
                 <div className="flex items-center gap-2">
                   {logoUrl ? (
-                    <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-slate-700 flex-shrink-0" />
+                    <img src={logoUrl} alt="Logo" className="w-10 h-10 rounded-xl object-cover border border-theme-border flex-shrink-0" />
                   ) : (
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">
-                      <Image className="w-4 h-4 text-slate-500" />
+                    <div className="w-10 h-10 rounded-xl bg-theme-bg border border-theme-border flex items-center justify-center flex-shrink-0">
+                      <Image className="w-4 h-4 text-theme-muted" />
                     </div>
                   )}
                   <div className="flex-1 space-y-1">
@@ -325,9 +603,9 @@ export default function BrandingSettingsPage({ onBack }) {
                       type="button"
                       onClick={() => logoFileRef.current?.click()}
                       disabled={logoUploading}
-                      className="w-full py-2 px-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-600/40 text-emerald-400 font-bold flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
+                      className="w-full py-2 px-3 rounded-xl bg-theme-bg hover:bg-theme-card border border-theme-border text-theme-text font-bold flex items-center justify-center gap-1.5 transition-all disabled:opacity-60 cursor-pointer"
                     >
-                      <Upload className="w-3.5 h-3.5" />
+                      <Upload className="w-3.5 h-3.5 text-theme-primary" />
                       {logoUploading ? 'Mengupload...' : 'Upload Logo'}
                     </button>
                     <input
@@ -335,22 +613,22 @@ export default function BrandingSettingsPage({ onBack }) {
                       value={logoUrl}
                       onChange={(e) => setLogoUrl(e.target.value)}
                       placeholder="Atau tempel URL logo..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-[10px] text-slate-400 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-theme-bg border border-theme-border rounded-xl px-2.5 py-1.5 text-[10px] text-theme-text placeholder:text-theme-muted/60 focus:outline-none focus:border-theme-primary"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">Format: PNG, JPG, SVG, WebP. Maks 2 MB</p>
+                <p className="text-[10px] text-theme-muted mt-1">Format: PNG, JPG, SVG, WebP. Maks 2 MB</p>
               </div>
 
               {/* Favicon Upload Widget */}
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Favicon Browser (ICO/PNG)</label>
+                <label className="font-bold text-theme-text block mb-1">Favicon Browser (ICO/PNG)</label>
                 <div className="flex items-center gap-2">
                   {faviconUrl ? (
-                    <img src={faviconUrl} alt="Favicon" className="w-10 h-10 rounded-xl object-contain border border-slate-700 bg-slate-800 p-1 flex-shrink-0" />
+                    <img src={faviconUrl} alt="Favicon" className="w-10 h-10 rounded-xl object-contain border border-theme-border bg-theme-bg p-1 flex-shrink-0" />
                   ) : (
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">
-                      <Link2 className="w-4 h-4 text-slate-500" />
+                    <div className="w-10 h-10 rounded-xl bg-theme-bg border border-theme-border flex items-center justify-center flex-shrink-0">
+                      <Link2 className="w-4 h-4 text-theme-muted" />
                     </div>
                   )}
                   <div className="flex-1 space-y-1">
@@ -365,9 +643,9 @@ export default function BrandingSettingsPage({ onBack }) {
                       type="button"
                       onClick={() => faviconFileRef.current?.click()}
                       disabled={faviconUploading}
-                      className="w-full py-2 px-3 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-600/40 text-blue-400 font-bold flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
+                      className="w-full py-2 px-3 rounded-xl bg-theme-bg hover:bg-theme-card border border-theme-border text-theme-text font-bold flex items-center justify-center gap-1.5 transition-all disabled:opacity-60 cursor-pointer"
                     >
-                      <Upload className="w-3.5 h-3.5" />
+                      <Upload className="w-3.5 h-3.5 text-theme-primary" />
                       {faviconUploading ? 'Mengupload...' : 'Upload Favicon'}
                     </button>
                     <input
@@ -375,39 +653,35 @@ export default function BrandingSettingsPage({ onBack }) {
                       value={faviconUrl}
                       onChange={(e) => setFaviconUrl(e.target.value)}
                       placeholder="Atau tempel URL favicon..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-[10px] text-slate-400 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-theme-bg border border-theme-border rounded-xl px-2.5 py-1.5 text-[10px] text-theme-text placeholder:text-theme-muted/60 focus:outline-none focus:border-theme-primary"
                     />
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">Format: ICO, PNG, SVG. Maks 512 KB</p>
+                <p className="text-[10px] text-theme-muted mt-1">Format: ICO, PNG, SVG. Maks 512 KB</p>
               </div>
             </div>
           </div>
 
           {/* Section: Tema Tampilan */}
-          <div className="pt-4 border-t border-slate-800 space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+          <div className="pt-4 border-t border-theme-border space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-theme-primary flex items-center gap-1.5">
               <Palette className="w-4 h-4" /> Tema Tampilan Marketplace
             </h2>
-            <p className="text-[11px] text-slate-400">Pilih tema warna untuk tampilan toko / landing page pelanggan. Admin tetap menggunakan dark slate.</p>
-            
-            {/* Live Preview Section */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 animate-in fade-in">
-              <label className="font-bold text-slate-300 block text-xs">Live Preview Tema Landing Page</label>
-              <ThemePreview themeId={theme} availableThemes={availableThemes} />
-              <p className="text-[10px] text-slate-500">Pratinjau langsung tema yang dipilih. Klik 'Simpan Semua Pengaturan' untuk menerapkan ke landing page.</p>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <p className="text-[11px] text-theme-muted">
+              Pilih tema warna di bawah ini untuk diterapkan langsung ke tampilan toko dan landing page pelanggan:
+            </p>
+
+            {/* Pilihan Tema (DI ATAS Live Preview) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {availableThemes.map((t) => (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => switchTheme(t.id)}
-                  className={`relative rounded-2xl border-2 text-left transition-all overflow-hidden group ${
+                  className={`relative rounded-2xl border-2 text-left transition-all overflow-hidden group cursor-pointer ${
                     theme === t.id
-                      ? 'border-emerald-500 ring-2 ring-emerald-500/40 shadow-lg shadow-emerald-500/20'
-                      : 'border-slate-700 hover:border-slate-500'
+                      ? 'border-theme-primary ring-2 ring-theme-primary/40 shadow-lg shadow-theme-primary/20'
+                      : 'border-theme-border hover:border-theme-primary/50'
                   }`}
                 >
                   {/* Mini landing page mockup */}
@@ -432,23 +706,31 @@ export default function BrandingSettingsPage({ onBack }) {
                   </div>
 
                   {/* Label */}
-                  <div className="px-2.5 py-2 bg-slate-900/90">
+                  <div className="px-2.5 py-2 bg-theme-card border-t border-theme-border">
                     <div className="flex items-center justify-between">
-                      <span className={`text-[11px] font-bold ${theme === t.id ? 'text-emerald-400' : 'text-slate-200'}`}>
+                      <span className={`text-[11px] font-bold ${theme === t.id ? 'text-theme-primary' : 'text-theme-text'}`}>
                         {t.name}
                       </span>
                       {theme === t.id && (
-                        <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
+                        <span className="w-4 h-4 rounded-full bg-theme-primary flex items-center justify-center">
                           <span className="text-[8px] text-white font-black">✓</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">{t.desc}</p>
+                    <p className="text-[9px] text-theme-muted mt-0.5 leading-tight truncate">{t.desc}</p>
                   </div>
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-slate-500">Tema yang dipilih tersimpan saat klik "Simpan Semua Pengaturan". Admin selalu dark slate.</p>
+
+            {/* Live Preview Section (DI BAWAH Pilihan Tema) */}
+            <div className="p-4 rounded-2xl bg-theme-bg border border-theme-border space-y-3 animate-in fade-in mt-4">
+              <label className="font-bold text-theme-text block text-xs">Live Preview Tema Landing Page</label>
+              <ThemePreview themeId={theme} availableThemes={availableThemes} />
+              <p className="text-[10px] text-theme-muted">
+                Pratinjau langsung tema terpilih. Klik 'Simpan Semua Pengaturan' untuk menyimpan preferensi ini secara permanen.
+              </p>
+            </div>
           </div>
 
           {/* Section 2: Biaya Ekspedisi & Layanan */}
@@ -458,107 +740,107 @@ export default function BrandingSettingsPage({ onBack }) {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Tarif Armada per KM (Rupiah)</label>
+                <label className="font-bold text-theme-text block mb-1">Tarif Armada per KM (Rupiah)</label>
                 <input
                   type="number"
                   step="500"
                   value={shippingRatePerKm}
                   onChange={(e) => setShippingRatePerKm(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Default: Rp 8.500 / km</span>
+                <span className="text-[10px] text-theme-muted mt-0.5 block">Default: Rp 8.500 / km</span>
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Biaya Layanan Admin (Rupiah)</label>
+                <label className="font-bold text-theme-text block mb-1">Biaya Layanan Admin (Rupiah)</label>
                 <input
                   type="number"
                   step="1000"
                   value={serviceFeeNominal}
                   onChange={(e) => setServiceFeeNominal(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Termasuk asuransi hidup</span>
+                <span className="text-[10px] text-theme-muted mt-0.5 block">Termasuk asuransi hidup</span>
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Opsi Ekspedisi API Cargo</label>
+                <label className="font-bold text-theme-text block mb-1">Opsi Ekspedisi API Cargo</label>
                 <button
                   type="button"
                   onClick={() => setEnableApiExpedition(!enableApiExpedition)}
-                  className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all ${
+                  className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                     enableApiExpedition
-                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
-                      : 'bg-slate-950 border-slate-800 text-slate-400'
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-theme-bg border-theme-border text-theme-muted'
                   }`}
                 >
                   {enableApiExpedition ? '✓ Aktif (Kalog / Herona API)' : '✕ Nonaktif'}
                 </button>
-                <span className="text-[10px] text-slate-500 mt-0.5 block">Cargo tarif terstandar</span>
+                <span className="text-[10px] text-theme-muted mt-0.5 block">Cargo tarif terstandar</span>
               </div>
             </div>
           </div>
 
           {/* Section 3: Kontak CS & Media Sosial */}
-          <div className="pt-4 border-t border-slate-800 space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+          <div className="pt-4 border-t border-theme-border space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-theme-primary flex items-center gap-1.5">
               <Share2 className="w-4 h-4" /> Kontak CS & Media Sosial Resmi
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-300 block mb-1">WhatsApp Customer Care</label>
+                <label className="font-bold text-theme-text block mb-1">WhatsApp Customer Care</label>
                 <input
                   type="text"
                   value={supportWhatsapp}
                   onChange={(e) => setSupportWhatsapp(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Link Instagram Resmi</label>
+                <label className="font-bold text-theme-text block mb-1">Link Instagram Resmi</label>
                 <input
                   type="text"
                   value={sosmedInstagram}
                   onChange={(e) => setSosmedInstagram(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Link Facebook Fanpage</label>
+                <label className="font-bold text-theme-text block mb-1">Link Facebook Fanpage</label>
                 <input
                   type="text"
                   value={sosmedFacebook}
                   onChange={(e) => setSosmedFacebook(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 block mb-1">Link TikTok Resmi</label>
+                <label className="font-bold text-theme-text block mb-1">Link TikTok Resmi</label>
                 <input
                   type="text"
                   value={sosmedTiktok}
                   onChange={(e) => setSosmedTiktok(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 4: Footer Teks & Hak Cipta */}
-          <div className="pt-4 border-t border-slate-800 space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+          <div className="pt-4 border-t border-theme-border space-y-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-theme-primary flex items-center gap-1.5">
               <FileText className="w-4 h-4" /> Teks Footer & Legalitas
             </h2>
             <div>
-              <label className="font-bold text-slate-300 block mb-1">Deskripsi Ringkas Footer</label>
+              <label className="font-bold text-theme-text block mb-1">Deskripsi Ringkas Footer</label>
               <textarea
                 rows={2}
                 value={footerText}
                 onChange={(e) => setFooterText(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs text-theme-text focus:outline-none focus:border-theme-primary resize-none"
               />
             </div>
           </div>
@@ -567,7 +849,7 @@ export default function BrandingSettingsPage({ onBack }) {
             <button
               type="submit"
               disabled={saving}
-              className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold text-xs shadow-lg transition-all"
+              className="px-8 py-3 rounded-xl bg-theme-primary hover:bg-theme-primary-hover disabled:opacity-50 text-white font-extrabold text-xs shadow-lg transition-all cursor-pointer"
             >
               {saving ? 'Menyimpan Pengaturan...' : 'Simpan Semua Pengaturan'}
             </button>

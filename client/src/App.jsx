@@ -12,6 +12,7 @@ import DesktopNav from './components/common/DesktopNav';
 import MobileHeader from './components/common/MobileHeader';
 import FloatingBottomDock from './components/common/FloatingBottomDock';
 import CartDrawer from './components/common/CartDrawer';
+import LocationSetupModal from './components/common/LocationSetupModal';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -75,7 +76,7 @@ function getPathForPage(page, params = {}) {
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [currentPage, setCurrentPage] = useState(() => parseUrlPath());
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [activeTrackingOrderId, setActiveTrackingOrderId] = useState('ord_demo_001');
@@ -85,6 +86,18 @@ function AppContent() {
   const [checkoutAnimalIds, setCheckoutAnimalIds] = useState([]);
   const [catalogInitialCategory, setCatalogInitialCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+
+  // Trigger guided location setup if user is logged in but has no coordinates set
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const hasLocation = user.latitude !== undefined && user.latitude !== null && user.longitude !== undefined && user.longitude !== null;
+      const dismissed = sessionStorage.getItem('ternakmart_location_prompt_dismissed');
+      if (!hasLocation && !dismissed) {
+        setIsLocationModalOpen(true);
+      }
+    }
+  }, [isAuthenticated, user]);
 
   // Handle browser Back / Forward buttons
   useEffect(() => {
@@ -159,13 +172,14 @@ function AppContent() {
       />
       <MobileHeader
         onNavigate={navigateTo}
+        currentPage={currentPage}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSelectAnimal={handleSelectAnimal}
       />
 
       {/* Main Routed Page Content */}
-      <main className="flex-1 w-full max-w-full overflow-x-hidden">
+      <main className={`flex-1 w-full max-w-full overflow-x-hidden ${currentPage !== 'home' ? 'pt-16 lg:pt-20' : 'pt-0'}`}>
         {currentPage === 'home' && (
           <HomePage
             onNavigate={navigateTo}
@@ -285,6 +299,15 @@ function AppContent() {
       <CartDrawer
         onNavigate={navigateTo}
         onSelectAnimal={handleSelectAnimal}
+      />
+
+      {/* Smart Location Setup Modal */}
+      <LocationSetupModal
+        isOpen={isLocationModalOpen}
+        onClose={() => {
+          setIsLocationModalOpen(false);
+          sessionStorage.setItem('ternakmart_location_prompt_dismissed', 'true');
+        }}
       />
     </div>
   );

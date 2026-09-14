@@ -180,3 +180,41 @@ CREATE TABLE IF NOT EXISTS system_settings (
   value_json JSONB NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS categories (
+  id VARCHAR(64) PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  slug VARCHAR(120) UNIQUE NOT NULL,
+  icon VARCHAR(50),
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id VARCHAR(64) PRIMARY KEY,
+  user_id VARCHAR(64) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL UNIQUE,
+  keys JSONB NOT NULL,
+  user_agent TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS seo_configs (
+  id VARCHAR(64) PRIMARY KEY,
+  page_route VARCHAR(150) UNIQUE NOT NULL,
+  meta_title VARCHAR(200) NOT NULL,
+  meta_description TEXT NOT NULL,
+  focus_keywords TEXT,
+  canonical_url TEXT,
+  og_title VARCHAR(200),
+  og_description TEXT,
+  og_image_url TEXT,
+  twitter_card_type VARCHAR(50) DEFAULT 'summary_large_image',
+  jsonld_schema_type VARCHAR(50) DEFAULT 'Product',
+  custom_schema JSONB,
+  is_indexable BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+

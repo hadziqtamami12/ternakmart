@@ -276,9 +276,16 @@ export default function AnimalDetailPage({ animal, onBack, onNavigate, onStartCh
               </button>
             </div>
 
-            {/* Direct Chat / Negotiate Price Button */}
+            {/* Direct Chat / Negotiate Price Button (Auth-Gated) */}
             <button
-              onClick={() => onStartChat && onStartChat(animal.store?.user_id || 'usr_seller_001', animal)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  sessionStorage.setItem('ternakmart_redirect_url', 'chat');
+                  onNavigate('auth', { redirect: 'chat', animalId: animal.id });
+                } else if (onStartChat) {
+                  onStartChat(animal.store?.user_id || 'usr_seller_001', animal);
+                }
+              }}
               className="w-full py-3.5 px-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-extrabold text-xs flex items-center justify-center gap-2 transition-colors"
             >
               <MessageCircle className="w-4 h-4" />

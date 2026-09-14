@@ -78,5 +78,6 @@ const authorize = (roles = []) => {
 module.exports = {
   authenticate,
   optionalAuth,
-  authorize
+  authorize,
+  authorizeRole: (role) => authorize(Array.isArray(role) ? role : [role])
 };

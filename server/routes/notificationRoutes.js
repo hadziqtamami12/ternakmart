@@ -10,5 +10,6 @@ router.get('/my', notificationController.getMyNotifications);
 router.put('/read-all', notificationController.markAllAsRead);
 router.put('/:notifId/read', notificationController.markAsRead);
 router.post('/demo-trigger', notificationController.triggerDemoNotification);
+router.post('/subscribe-push', notificationController.subscribePush);
 
 module.exports = router;

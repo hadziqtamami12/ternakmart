@@ -165,7 +165,7 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-36 overflow-x-hidden">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-64 sm:pb-48 overflow-x-hidden">
       {/* Top Header & Mode Toggle Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-theme-border pb-4">
         <div>
@@ -393,7 +393,7 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-14 lg:bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-theme-border shadow-elevated p-3 sm:p-4">
+      <div className="fixed bottom-14 lg:bottom-0 left-0 right-0 z-40 bg-theme-card border-t border-theme-border shadow-elevated p-3 sm:p-4" style={{ backgroundColor: 'var(--color-card, #ffffff)' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center justify-between w-full sm:w-auto gap-4">
             {isBulkMode ? (

@@ -17,7 +17,10 @@ export default {
           primary: 'var(--color-primary)',
           'primary-hover': 'var(--color-primary-hover)',
           'primary-light': 'var(--color-primary-light)',
+          'primary-contrast': 'var(--color-primary-contrast, #ffffff)',
           accent: 'var(--color-accent)',
+          'accent-bg': 'var(--color-accent-bg)',
+          'accent-border': 'var(--color-accent-border)',
         }
       },
       fontFamily: {

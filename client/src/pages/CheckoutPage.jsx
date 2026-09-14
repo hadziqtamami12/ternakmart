@@ -11,7 +11,13 @@ import {
   Info,
   MapPin,
   ExternalLink,
-  LocateFixed
+  LocateFixed,
+  Plus,
+  Navigation,
+  Sparkles,
+  Clock,
+  Package,
+  ChevronDown
 } from 'lucide-react';
 import { api } from '../utils/api';
 import { formatRupiah, formatWeight } from '../utils/formatters';
@@ -19,6 +25,7 @@ import { CheckoutSkeleton } from '../components/common/Skeletons';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useAppConfig } from '../context/AppConfigContext';
+import AddressFormModal from '../components/common/AddressFormModal';
 
 export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
   const { config, setDocumentTitle } = useAppConfig();
@@ -36,8 +43,15 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
   const [destLng, setDestLng] = useState(user?.longitude || 106.8532);
   const [gpsStatus, setGpsStatus] = useState('');
 
-  // Expedition type: 'OFFICIAL_COURIER' (per km) | 'API_EXPEDITION' (flat cargo) | 'SELF_PICKUP' (0)
-  const [expeditionType, setExpeditionType] = useState('OFFICIAL_COURIER');
+  // Address & Expedition states
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [shippingSettings, setShippingSettings] = useState(null);
+
+  // Expedition type: 'GOTERNAK' (internal local) | 'CARGO_EXPEDITION' (3rd party API) | 'SELF_PICKUP' (0)
+  const [expeditionType, setExpeditionType] = useState('GOTERNAK');
+  const [selectedCourier, setSelectedCourier] = useState('JNE Trucking (JTR)');
 
   // Voucher state
   const [voucherCode, setVoucherCode] = useState('');
@@ -47,6 +61,10 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
   // Payment state
   const [paymentMethod, setPaymentMethod] = useState('MANUAL_TRANSFER'); // 'MANUAL_TRANSFER' | 'GATEWAY'
   const [selectedBank, setSelectedBank] = useState('BCA');
+  const [uniqueCode] = useState(() => Math.floor(100 + Math.random() * 899)); // 3-digit kode unik
+  const [paymentProofFile, setPaymentProofFile] = useState(null);
+  const [paymentProofPreview, setPaymentProofPreview] = useState('');
+  const [uploadProofError, setUploadProofError] = useState('');
 
   // Estimate state
   const [estimate, setEstimate] = useState({
@@ -85,6 +103,32 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
           if (res.success && res.data) loadedAnimals.push(res.data);
         }
 
+        // Load user addresses
+        try {
+          const addrRes = await api.get('/addresses');
+          if (addrRes.success && addrRes.data && addrRes.data.length > 0) {
+            setSavedAddresses(addrRes.data);
+            const def = addrRes.data.find(a => a.is_default) || addrRes.data[0];
+            setSelectedAddressId(def.id);
+            setDeliveryAddress(def.full_address);
+            if (def.latitude && def.longitude) {
+              const lat = parseFloat(def.latitude);
+              const lng = parseFloat(def.longitude);
+              setDestLat(lat);
+              setDestLng(lng);
+              setMapsUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+            }
+          }
+        } catch (e) {}
+
+        // Load shipping settings
+        try {
+          const shipRes = await api.get('/shipping-settings');
+          if (shipRes.success && shipRes.data) {
+            setShippingSettings(shipRes.data);
+          }
+        } catch (e) {}
+
         setAnimals(loadedAnimals);
 
         // Initial rates calculation
@@ -99,6 +143,26 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
     };
     initData();
   }, [animalId, JSON.stringify(animalIds)]);
+
+  const handleSelectAddress = (addr) => {
+    setSelectedAddressId(addr.id);
+    setDeliveryAddress(addr.full_address);
+    if (addr.latitude && addr.longitude) {
+      const lat = parseFloat(addr.latitude);
+      const lng = parseFloat(addr.longitude);
+      setDestLat(lat);
+      setDestLng(lng);
+      setMapsUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+      setGpsStatus(`✓ Alamat "${addr.label}" dipilih (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+      calculateRates(animals[0]?.id, lat, lng, voucherCode, animals);
+    }
+  };
+
+  const handleAddressCreated = (newAddr) => {
+    setSavedAddresses((prev) => [newAddr, ...prev]);
+    handleSelectAddress(newAddr);
+    setIsAddressModalOpen(false);
+  };
 
   // Parse Google Maps Link or text to extract coordinates
   const handleMapsUrlChange = (url) => {
@@ -162,10 +226,13 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
         let finalShipping = rawEstimate.shipping_fee;
         if (expeditionType === 'SELF_PICKUP') {
           finalShipping = 0;
-        } else if (expeditionType === 'API_EXPEDITION') {
-          // Standard cargo flat rate based on weight
+        } else if (expeditionType === 'CARGO_EXPEDITION') {
+          // 3rd-party cargo flat rate per kg based on weight
           const totalWeight = animalsList.reduce((acc, a) => acc + parseFloat(a.weight_kg || 50), 0);
-          finalShipping = Math.max(150000, Math.round(totalWeight * 2500));
+          finalShipping = Math.max(65000, Math.round(totalWeight * 2200));
+        } else {
+          // GoTernak internal courier
+          finalShipping = rawEstimate.shipping_fee;
         }
 
         const grand = Math.max(0, sumBasePrice - rawEstimate.store_discount - rawEstimate.admin_discount + finalShipping - rawEstimate.shipping_subsidy + rawEstimate.service_fee);
@@ -223,6 +290,9 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
         const res = await api.post('/orders/create', {
           animal_id: anm.id,
           payment_method: paymentMethod,
+          selected_bank: selectedBank,
+          unique_code: uniqueCode,
+          payment_proof_url: paymentProofPreview || undefined,
           delivery_address: `${deliveryAddress} (Gmaps: ${mapsUrl})`,
           dest_lat: destLat,
           dest_lng: destLng,
@@ -279,10 +349,11 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
   }
 
   const bankAccounts = [
-    { code: 'BCA', name: 'Bank Central Asia', number: '8830192841', holder: 'PT TERNAKMART INDONESIA' },
-    { code: 'MANDIRI', name: 'Bank Mandiri', number: '1310029384910', holder: 'PT TERNAKMART INDONESIA' },
-    { code: 'BRI', name: 'Bank Rakyat Indonesia', number: '034101000982301', holder: 'PT TERNAKMART INDONESIA' },
-    { code: 'BNI', name: 'Bank Negara Indonesia', number: '9928172635', holder: 'PT TERNAKMART INDONESIA' }
+    { code: 'BCA', name: 'BCA Mitra Farm', number: '8830192841', holder: 'H. Syamsul Bahri (Barokah Farm)', type: 'BANK' },
+    { code: 'MANDIRI', name: 'Mandiri Mitra', number: '1310029384910', holder: 'Peternakan Berkah Barokah', type: 'BANK' },
+    { code: 'BRI', name: 'BRI Agro', number: '034101000982301', holder: 'Koperasi Peternak Mandiri', type: 'BANK' },
+    { code: 'QRIS', name: 'QRIS Peternak', number: 'ID1020304050607', holder: 'TernakMart Escrow & Farm', type: 'EWALLET' },
+    { code: 'GOPAY', name: 'GoPay Farm', number: '081234567890', holder: 'Mitra Barokah Ternak', type: 'EWALLET' }
   ];
 
   return (
@@ -335,14 +406,75 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
             </div>
           </div>
 
-          {/* Delivery Address & Google Maps Link */}
+          {/* Delivery Address & Tikor Picker */}
           <div className="bg-theme-card border border-theme-border rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
-            <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-theme-primary" /> Alamat & Link Google Maps Tujuan
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-theme-primary" /> Alamat & Titik Koordinat (Tikor) Pengiriman
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsAddressModalOpen(true)}
+                className="text-xs font-bold text-theme-primary hover:text-theme-primary-hover flex items-center gap-1 bg-theme-primary-light/30 px-3 py-1.5 rounded-xl transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Tambah Alamat Baru</span>
+              </button>
+            </div>
 
-            <div className="space-y-3">
-              {/* Alamat Lengkap */}
+            {/* Saved addresses selector */}
+            {savedAddresses && savedAddresses.length > 0 ? (
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-theme-muted block">
+                  Pilih Alamat Tersimpan:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {savedAddresses.map((addr) => {
+                    const isSelected = selectedAddressId === addr.id;
+                    return (
+                      <div
+                        key={addr.id}
+                        onClick={() => handleSelectAddress(addr)}
+                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-theme-primary bg-theme-primary-light/20 ring-2 ring-theme-primary/20 shadow-sm'
+                            : 'border-theme-border bg-theme-bg/60 hover:border-theme-primary/40'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-xs text-theme-text">{addr.label}</span>
+                            {addr.is_default && (
+                              <span className="text-[10px] bg-theme-primary/10 text-theme-primary font-bold px-1.5 py-0.5 rounded-md">
+                                Utama
+                              </span>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <CheckCircle2 className="w-4 h-4 text-theme-primary flex-shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs font-semibold text-theme-text line-clamp-1">
+                          {addr.recipient_name} ({addr.phone_number})
+                        </p>
+                        <p className="text-[11px] text-theme-muted line-clamp-2 mt-0.5">
+                          {addr.full_address}
+                        </p>
+                        {addr.latitude && addr.longitude && (
+                          <div className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <Navigation className="w-3 h-3" />
+                            <span>Tikor: {Number(addr.latitude).toFixed(4)}, {Number(addr.longitude).toFixed(4)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Manual address detail or fallback */}
+            <div className="space-y-3 pt-1">
               <div>
                 <label className="text-xs font-semibold text-theme-muted block mb-1">
                   Alamat Lengkap Penerima / Kandang Tujuan
@@ -356,11 +488,11 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                 />
               </div>
 
-              {/* Google Maps Link Input */}
+              {/* Google Maps Link / Geolocation */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-theme-muted">
-                    Link Google Maps (Contoh: https://maps.app.goo.gl/xxxx)
+                    Link Google Maps atau Titik Koordinat (Tikor)
                   </label>
                   <button
                     type="button"
@@ -397,72 +529,186 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                   </p>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* Expedition Method Choice */}
-              <div className="pt-2">
-                <label className="text-xs font-semibold text-theme-muted block mb-2">
-                  Pilihan Ekspedisi & Logistik Ternak
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setExpeditionType('OFFICIAL_COURIER')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      expeditionType === 'OFFICIAL_COURIER'
-                        ? 'border-theme-primary bg-theme-primary-light/30 ring-2 ring-theme-primary/20'
-                        : 'border-theme-border bg-theme-bg hover:bg-theme-border/30'
-                    }`}
-                  >
-                    <div className="font-bold text-xs text-theme-text flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5 text-theme-primary" />
-                      <span>Armada Mandiri</span>
-                    </div>
-                    <p className="text-[10px] text-theme-muted mt-1">
-                      Kalkulasi per km (Rp 8.500/km) + kandang sejuk
-                    </p>
-                  </button>
+          {/* INTERACTIVE DELIVERY SELECTION CARDS */}
+          <div className="bg-theme-card border border-theme-border rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-theme-primary" /> Opsi Pengiriman & Logistik Hewan
+                </h2>
+                <p className="text-xs text-theme-muted mt-0.5">
+                  Pilih armada khusus hewan hidup atau kargo logistik terpercaya
+                </p>
+              </div>
+              <span className="text-[11px] font-bold text-theme-primary bg-theme-primary/10 px-2.5 py-1 rounded-full">
+                Jarak: ~{estimate.distance_km} km
+              </span>
+            </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setExpeditionType('API_EXPEDITION')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      expeditionType === 'API_EXPEDITION'
-                        ? 'border-theme-primary bg-theme-primary-light/30 ring-2 ring-theme-primary/20'
-                        : 'border-theme-border bg-theme-bg hover:bg-theme-border/30'
-                    }`}
-                  >
-                    <div className="font-bold text-xs text-theme-text flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-teal-600" />
-                      <span>API Cargo Ternak</span>
+            <div className="space-y-3 pt-1">
+              {/* CARD 1: GoTernak Kurir Khusus Hewan Ternak */}
+              <div
+                onClick={() => setExpeditionType('GOTERNAK')}
+                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${
+                  expeditionType === 'GOTERNAK'
+                    ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-md'
+                    : 'border-theme-border bg-theme-bg/60 hover:border-emerald-500/50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+                      <Truck className="w-5 h-5" />
                     </div>
-                    <p className="text-[10px] text-theme-muted mt-1">
-                      Kalog / Herona Express tarif terstandar
-                    </p>
-                  </button>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-sm text-theme-text">GoTernak</span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          <ShieldCheck className="w-3 h-3" /> Mitra Resmi GoTernak
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-theme-muted mt-1 leading-relaxed">
+                        Armada khusus ternak (Pick-up / Engkel berterpal sekat). Dilengkapi jerami pakan, ventilasi sejuk, dan garansi kesehatan selama perjalanan.
+                      </p>
 
-                  <button
-                    type="button"
-                    onClick={() => setExpeditionType('SELF_PICKUP')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      expeditionType === 'SELF_PICKUP'
-                        ? 'border-theme-primary bg-theme-primary-light/30 ring-2 ring-theme-primary/20'
-                        : 'border-theme-border bg-theme-bg hover:bg-theme-border/30'
-                    }`}
-                  >
-                    <div className="font-bold text-xs text-theme-text flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Ambil di Kandang</span>
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+                        <span className="flex items-center gap-1 text-theme-muted">
+                          <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Estimasi: <strong>1 - 2 Hari</strong></span>
+                        </span>
+                        <span className="flex items-center gap-1 text-theme-muted">
+                          <Navigation className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Jarak: <strong>{estimate.distance_km} km</strong> (Tikor Presisi)</span>
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-theme-muted mt-1">
-                      Gratis ongkir (Rp 0) langsung cek di kandang
-                    </p>
-                  </button>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                      {formatRupiah(expeditionType === 'GOTERNAK' ? estimate.shipping_fee : (shippingSettings?.goternak_base_fee || 20000) + ((shippingSettings?.goternak_per_km_fee || 4000) * (estimate.distance_km || 15)))}
+                    </div>
+                    <div className="text-[10px] text-theme-muted mt-0.5">
+                      Formula Rp {(shippingSettings?.goternak_per_km_fee || 4000).toLocaleString('id-ID')}/km
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-[11px] text-theme-muted pt-1">
-                Jarak estimasi: <strong>{estimate.distance_km} km</strong> dari kandang mitra peternak.
-              </p>
+              {/* CARD 2: Kargo Logistik Pihak Ketiga */}
+              <div
+                onClick={() => setExpeditionType('CARGO_EXPEDITION')}
+                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${
+                  expeditionType === 'CARGO_EXPEDITION'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 ring-2 ring-blue-500/30 shadow-md'
+                    : 'border-theme-border bg-theme-bg/60 hover:border-blue-500/50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+                      <Package className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-sm text-theme-text">Ekspedisi Kargo Pihak Ketiga</span>
+                        <span className="text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full">
+                          Pakan & Logistik
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-theme-muted mt-1 leading-relaxed">
+                        Cocok untuk produk non-hewan hidup (pakan ternak, suplemen, obat) atau hewan kecil berbox karantina resmi standar ekspedisi.
+                      </p>
+
+                      {/* Courier Selection Pills */}
+                      <div className="flex items-center gap-2 mt-3">
+                        {['JNE Trucking (JTR)', 'SiCepat Gokil', 'Kalog Express'].map((courier) => (
+                          <button
+                            key={courier}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCourier(courier);
+                              setExpeditionType('CARGO_EXPEDITION');
+                            }}
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+                              selectedCourier === courier && expeditionType === 'CARGO_EXPEDITION'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-theme-border/50 text-theme-muted hover:text-theme-text'
+                            }`}
+                          >
+                            {courier}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-2.5 text-xs text-theme-muted">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Estimasi: <strong>2 - 4 Hari Kerja</strong></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-base font-black text-blue-600 dark:text-blue-400">
+                      {formatRupiah(expeditionType === 'CARGO_EXPEDITION' ? estimate.shipping_fee : Math.max(65000, Math.round((animals[0]?.weight_kg || 40) * 2200)))}
+                    </div>
+                    <div className="text-[10px] text-theme-muted mt-0.5">
+                      Tarif Terintegrasi API
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 3: Ambil di Kandang (Self Pickup) */}
+              <div
+                onClick={() => setExpeditionType('SELF_PICKUP')}
+                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${
+                  expeditionType === 'SELF_PICKUP'
+                    ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/30 shadow-md'
+                    : 'border-theme-border bg-theme-bg/60 hover:border-amber-500/50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
+                      <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-theme-text">Ambil Sendiri di Kandang (Self-Pickup)</span>
+                        <span className="text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                          Bebas Ongkir
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-theme-muted mt-1 leading-relaxed">
+                        Bawa kendaraan sendiri ke kandang mitra peternak. Periksa kondisi fisik, bobot, dan sertifikat kesehatan ternak secara langsung di lokasi.
+                      </p>
+
+                      <div className="flex items-center gap-3 mt-3 text-xs text-theme-muted">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Jadwal Fleksibel (Koordinasi via Chat Penjual)</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    <div className="text-base font-black text-amber-600 dark:text-amber-400">
+                      GRATIS (Rp 0)
+                    </div>
+                    <div className="text-[10px] text-theme-muted mt-0.5">
+                      Tanpa biaya kirim
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -514,21 +760,21 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
             {paymentMethod === 'MANUAL_TRANSFER' && (
               <div className="space-y-3 pt-2">
                 <label className="text-xs font-semibold text-theme-muted block">
-                  Pilih Rekening Tujuan Transfer:
+                  Pilih Rekening Bank / E-Wallet Mitra Peternak:
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {bankAccounts.map((b) => (
                     <button
                       key={b.code}
                       type="button"
                       onClick={() => setSelectedBank(b.code)}
-                      className={`p-3 rounded-xl border text-center transition-all ${
+                      className={`p-2.5 rounded-xl border text-center transition-all ${
                         selectedBank === b.code
-                          ? 'border-theme-primary bg-theme-primary-light text-theme-primary font-black'
+                          ? 'border-theme-primary bg-theme-primary-light text-theme-primary font-black shadow-sm'
                           : 'border-theme-border bg-theme-bg text-theme-muted hover:border-theme-text'
                       }`}
                     >
-                      <span className="text-xs">{b.name}</span>
+                      <span className="text-[11px] block truncate">{b.name}</span>
                     </button>
                   ))}
                 </div>
@@ -537,18 +783,122 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                 {(() => {
                   const curr = bankAccounts.find(b => b.code === selectedBank) || bankAccounts[0];
                   return (
-                    <div className="p-3.5 rounded-2xl bg-theme-bg border border-theme-border text-xs space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-theme-muted">Nomor Rekening:</span>
-                        <span className="font-mono font-bold text-theme-text">{curr.number}</span>
+                    <div className="p-4 rounded-2xl bg-theme-bg border border-theme-border text-xs space-y-2.5">
+                      <div className="flex justify-between items-center pb-2 border-b border-theme-border/60">
+                        <div>
+                          <span className="text-[10px] text-theme-muted block uppercase font-bold">Nomor Rekening / E-Wallet</span>
+                          <span className="font-mono text-base font-black text-theme-text">{curr.number}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(curr.number);
+                            alert(`Nomor ${curr.code} (${curr.number}) disalin!`);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-theme-card border border-theme-border text-[10px] font-bold text-theme-primary hover:bg-theme-primary-light transition-all"
+                        >
+                          Salin Nomor
+                        </button>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-theme-muted">Atas Nama:</span>
+                        <span className="text-theme-muted">Penerima:</span>
                         <span className="font-bold text-theme-text">{curr.holder}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-theme-border/60">
+                        <span className="text-theme-muted flex items-center gap-1">
+                          <span>Kode Unik Verifikasi:</span>
+                          <span className="text-[10px] text-amber-600 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded">Otomatis</span>
+                        </span>
+                        <span className="font-mono font-black text-amber-600 text-sm">+{uniqueCode}</span>
                       </div>
                     </div>
                   );
                 })()}
+
+                {/* Upload Bukti Transfer Form */}
+                <div className="pt-2 space-y-2">
+                  <label className="text-xs font-semibold text-theme-muted block">
+                    Upload Bukti Transfer (Struk / Tangkapan Layar / PDF):
+                  </label>
+                  
+                  <div className="p-4 rounded-2xl border-2 border-dashed border-theme-border bg-theme-bg/50 hover:bg-theme-bg transition-colors flex flex-col items-center justify-center text-center">
+                    <input
+                      type="file"
+                      id="payment-proof-input"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        setUploadProofError('');
+                        if (!file) return;
+
+                        // Validation: Size < 5MB
+                        if (file.size > 5 * 1024 * 1024) {
+                          setUploadProofError('Ukuran file melebihi batas 5MB.');
+                          return;
+                        }
+
+                        // Validation: Type
+                        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+                        if (!validTypes.includes(file.type)) {
+                          setUploadProofError('Format harus berupa JPG, PNG, WEBP, atau PDF.');
+                          return;
+                        }
+
+                        setPaymentProofFile(file);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setPaymentProofPreview(reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+
+                    {paymentProofPreview ? (
+                      <div className="space-y-2 flex flex-col items-center">
+                        {paymentProofFile?.type === 'application/pdf' ? (
+                          <div className="p-3 bg-red-500/10 text-red-600 rounded-xl font-bold text-xs flex items-center gap-2">
+                            <span>📄 Dokumen PDF: {paymentProofFile.name}</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={paymentProofPreview}
+                            alt="Bukti Transfer"
+                            className="max-h-32 rounded-xl object-contain border border-theme-border shadow-sm"
+                          />
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-emerald-600 font-bold">✓ Bukti siap dilampirkan ({((paymentProofFile?.size || 0) / 1024).toFixed(0)} KB)</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPaymentProofFile(null);
+                              setPaymentProofPreview('');
+                            }}
+                            className="text-[10px] text-red-500 hover:underline font-bold"
+                          >
+                            Ganti
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="payment-proof-input"
+                        className="cursor-pointer space-y-1.5 flex flex-col items-center"
+                      >
+                        <div className="w-10 h-10 rounded-2xl bg-theme-primary/10 text-theme-primary flex items-center justify-center">
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-bold text-theme-text">Klik untuk Pilih File Bukti Transfer</span>
+                        <p className="text-[10px] text-theme-muted">Mendukung format JPG, PNG, WebP, PDF (Maks. 5 MB)</p>
+                      </label>
+                    )}
+                  </div>
+
+                  {uploadProofError && (
+                    <p className="text-[11px] text-red-500 font-medium">{uploadProofError}</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -661,6 +1011,14 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* Address Form Modal */}
+      {isAddressModalOpen && (
+        <AddressFormModal
+          onClose={() => setIsAddressModalOpen(false)}
+          onSaved={handleAddressCreated}
+        />
+      )}
     </div>
   );
 }

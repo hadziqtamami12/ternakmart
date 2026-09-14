@@ -5,75 +5,75 @@
       "name": "Super Admin Ternakmart",
       "username": "admin",
       "email": "admin@ternakmart.id",
-      "password_hash": "$2a$10$z9mEc5PbI5a1zW6/27hEcu4Xv08lyTd2SqcOUIw0L6Iy2e4OZjE4e",
+      "password_hash": "$2a$10$cbUfIWRMdUWpp7npgFbN0uUQkQZCCsJx7mHkVI687eDuRPUyagT.m",
       "phone_number": "+6281234567890",
       "avatar_url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
       "address": "Kantor Pusat Ternakmart, Jl. Agrowisata No. 88, Menteng, Jakarta Pusat",
       "latitude": -6.1954,
       "longitude": 106.8285,
       "role": "ADMIN",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "usr_seller_001",
       "name": "H. Syamsul Bahri (Peternakan Barokah Farm)",
       "username": "barokahfarm",
       "email": "syamsul@barokahfarm.id",
-      "password_hash": "$2a$10$z9mEc5PbI5a1zW6/27hEcu4Xv08lyTd2SqcOUIw0L6Iy2e4OZjE4e",
+      "password_hash": "$2a$10$cbUfIWRMdUWpp7npgFbN0uUQkQZCCsJx7mHkVI687eDuRPUyagT.m",
       "phone_number": "+6281398765432",
       "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
       "address": "Kompleks Peternakan Barokah, Cijeruk, Bogor, Jawa Barat",
       "latitude": -6.6895,
       "longitude": 106.7869,
       "role": "SELLER",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "usr_seller_002",
       "name": "Bpk. Hendra Gunawan (Sentra Domba Priangan)",
       "username": "dombapriangan",
       "email": "hendra@dombapriangan.id",
-      "password_hash": "$2a$10$z9mEc5PbI5a1zW6/27hEcu4Xv08lyTd2SqcOUIw0L6Iy2e4OZjE4e",
+      "password_hash": "$2a$10$cbUfIWRMdUWpp7npgFbN0uUQkQZCCsJx7mHkVI687eDuRPUyagT.m",
       "phone_number": "+6281223344556",
       "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
       "address": "Kandang Utama Pasirwangi, Garut, Jawa Barat",
       "latitude": -7.2278,
       "longitude": 107.8284,
       "role": "SELLER",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "usr_buyer_001",
       "name": "Ahmad Fauzi Rahman",
       "username": "fauzirahman",
       "email": "fauzi@gmail.com",
-      "password_hash": "$2a$10$z9mEc5PbI5a1zW6/27hEcu4Xv08lyTd2SqcOUIw0L6Iy2e4OZjE4e",
+      "password_hash": "$2a$10$cbUfIWRMdUWpp7npgFbN0uUQkQZCCsJx7mHkVI687eDuRPUyagT.m",
       "phone_number": "+6285711223344",
       "avatar_url": "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200&auto=format&fit=crop&q=80",
       "address": "Jl. Tebet Barat Dalam VII No. 14, Jakarta Selatan",
       "latitude": -6.2415,
       "longitude": 106.8532,
       "role": "BUYER",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "usr_courier_001",
       "name": "Bambang Sudiro (Armada Khusus Ternak Express)",
       "username": "bambangcourier",
       "email": "bambang@logistikternak.id",
-      "password_hash": "$2a$10$z9mEc5PbI5a1zW6/27hEcu4Xv08lyTd2SqcOUIw0L6Iy2e4OZjE4e",
+      "password_hash": "$2a$10$cbUfIWRMdUWpp7npgFbN0uUQkQZCCsJx7mHkVI687eDuRPUyagT.m",
       "phone_number": "+6287899887766",
       "avatar_url": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80",
       "address": "Pool Logistik Ternakmart, Cibinong, Bogor",
       "latitude": -6.4827,
       "longitude": 106.8576,
       "role": "COURIER",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "stores": [
@@ -95,8 +95,8 @@
       "status": "ACTIVE",
       "rating_average": 4.95,
       "total_reviews": 48,
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "store_002",
@@ -116,8 +116,8 @@
       "status": "ACTIVE",
       "rating_average": 4.88,
       "total_reviews": 32,
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "animals": [
@@ -137,15 +137,15 @@
       "skkh_verification_status": true,
       "price": 48500000,
       "is_qurban_eligible": true,
-      "status": "BOOKED",
+      "status": "AVAILABLE",
       "images": [
         "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1527153857715-3908f2ae5e81?w=800&auto=format&fit=crop&q=80",
         "https://images.unsplash.com/photo-1546445317-29f4545e9d53?w=800&auto=format&fit=crop&q=80"
       ],
       "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T05:14:50.786Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "anm_002",
@@ -169,8 +169,8 @@
         "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80"
       ],
       "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "anm_003",
@@ -194,8 +194,8 @@
         "https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=800&auto=format&fit=crop&q=80"
       ],
       "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "anm_004",
@@ -219,8 +219,8 @@
         "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=800&auto=format&fit=crop&q=80"
       ],
       "video_url": "",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "anm_005",
@@ -243,170 +243,16 @@
         "https://images.unsplash.com/photo-1557008075-7f2c5efa4cfd?w=800&auto=format&fit=crop&q=80"
       ],
       "video_url": "",
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
-    },
-    {
-      "id": "anm_001",
-      "store_id": "store_001",
-      "title": "Sapi Limosin Super Jumbo 850kg (Si Bima)",
-      "slug": "sapi-limosin-super-jumbo-850kg-bima",
-      "category": "SAPI",
-      "breed": "Limosin Cross",
-      "weight_kg": 850.5,
-      "age_months": 32,
-      "gender": "JANTAN",
-      "teeth_poel": "POEL_2",
-      "vaccination_status": "Lengkap (Vaksin PMK 1, PMK 2, Booster & Antraks)",
-      "skkh_certificate_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
-      "skkh_verification_status": true,
-      "price": 48500000,
-      "is_qurban_eligible": true,
-      "status": "AVAILABLE",
-      "images": [
-        "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1527153857715-3908f2ae5e81?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1546445317-29f4545e9d53?w=800&auto=format&fit=crop&q=80"
-      ],
-      "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-      "created_at": "2026-09-11T02:40:51.076Z",
-      "updated_at": "2026-09-11T02:40:51.076Z"
-    },
-    {
-      "id": "anm_002",
-      "store_id": "store_001",
-      "title": "Sapi Simental Super Gagah 720kg (Arjuna)",
-      "slug": "sapi-simental-super-gagah-720kg-arjuna",
-      "category": "SAPI",
-      "breed": "Simental Murni",
-      "weight_kg": 720,
-      "age_months": 28,
-      "gender": "JANTAN",
-      "teeth_poel": "POEL_1",
-      "vaccination_status": "Vaksin PMK Dosis 2 & Vitamin B Kompleks",
-      "skkh_certificate_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
-      "skkh_verification_status": true,
-      "price": 39500000,
-      "is_qurban_eligible": true,
-      "status": "AVAILABLE",
-      "images": [
-        "https://images.unsplash.com/photo-1546445317-29f4545e9d53?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80"
-      ],
-      "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-      "created_at": "2026-09-11T02:40:51.076Z",
-      "updated_at": "2026-09-11T02:40:51.076Z"
-    },
-    {
-      "id": "anm_003",
-      "store_id": "store_002",
-      "title": "Domba Garut Tanduk Mewah Kelas A 65kg",
-      "slug": "domba-garut-tanduk-mewah-kelas-a-65kg",
-      "category": "DOMBA",
-      "breed": "Garut Tanduk Meliuk",
-      "weight_kg": 65.2,
-      "age_months": 22,
-      "gender": "JANTAN",
-      "teeth_poel": "POEL_1",
-      "vaccination_status": "Vaksinasi Lengkap & Obat Cacing Rutin",
-      "skkh_certificate_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
-      "skkh_verification_status": true,
-      "price": 6800000,
-      "is_qurban_eligible": true,
-      "status": "AVAILABLE",
-      "images": [
-        "https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=800&auto=format&fit=crop&q=80"
-      ],
-      "video_url": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-      "created_at": "2026-09-11T02:40:51.076Z",
-      "updated_at": "2026-09-11T02:40:51.076Z"
-    },
-    {
-      "id": "anm_004",
-      "store_id": "store_002",
-      "title": "Kambing Etawa Ras Senduro Super 55kg",
-      "slug": "kambing-etawa-ras-senduro-super-55kg",
-      "category": "KAMBING",
-      "breed": "Etawa Senduro",
-      "weight_kg": 55,
-      "age_months": 20,
-      "gender": "JANTAN",
-      "teeth_poel": "POEL_1",
-      "vaccination_status": "Vaksin PMK Dosis 2 & Antirabies Ternak",
-      "skkh_certificate_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
-      "skkh_verification_status": true,
-      "price": 5200000,
-      "is_qurban_eligible": true,
-      "status": "AVAILABLE",
-      "images": [
-        "https://images.unsplash.com/photo-1524024973431-2ad916746881?w=800&auto=format&fit=crop&q=80",
-        "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?w=800&auto=format&fit=crop&q=80"
-      ],
-      "video_url": "",
-      "created_at": "2026-09-11T02:40:51.076Z",
-      "updated_at": "2026-09-11T02:40:51.076Z"
-    },
-    {
-      "id": "anm_005",
-      "store_id": "store_001",
-      "title": "Kerbau Rawa Sumbawa Gemuk Sehat 580kg",
-      "slug": "kerbau-rawa-sumbawa-gemuk-sehat-580kg",
-      "category": "KERBAU",
-      "breed": "Kerbau Rawa Lokal",
-      "weight_kg": 580,
-      "age_months": 36,
-      "gender": "JANTAN",
-      "teeth_poel": "POEL_2",
-      "vaccination_status": "SKKH Sehat Bebas Penyakit Menular Hewan",
-      "skkh_certificate_url": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80",
-      "skkh_verification_status": true,
-      "price": 32000000,
-      "is_qurban_eligible": true,
-      "status": "AVAILABLE",
-      "images": [
-        "https://images.unsplash.com/photo-1557008075-7f2c5efa4cfd?w=800&auto=format&fit=crop&q=80"
-      ],
-      "video_url": "",
-      "created_at": "2026-09-11T02:40:51.076Z",
-      "updated_at": "2026-09-11T02:40:51.076Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "carts": [
     {
       "id": "cart_001",
       "user_id": "usr_buyer_001",
-      "items_json": [
-        {
-          "animal_id": "anm_004",
-          "store_id": "store_002",
-          "notes": "",
-          "added_at": "2026-09-11T03:45:28.460Z"
-        }
-      ],
-      "updated_at": "2026-09-11T05:14:50.828Z"
-    },
-    {
-      "id": "car_b92c095fb5b4",
-      "user_id": "usr_admin_001",
-      "items_json": [
-        {
-          "animal_id": "anm_005",
-          "store_id": "store_001",
-          "quantity": 1,
-          "notes": "",
-          "added_at": "2026-09-11T06:46:00.879Z"
-        },
-        {
-          "animal_id": "anm_004",
-          "store_id": "store_002",
-          "quantity": 1,
-          "notes": "",
-          "added_at": "2026-09-11T06:46:00.891Z"
-        }
-      ],
-      "created_at": "2026-09-11T02:52:30.468Z",
-      "updated_at": "2026-09-11T06:46:00.891Z"
+      "items_json": [],
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "orders": [
@@ -434,33 +280,59 @@
       "dest_lat": -6.2415,
       "dest_lng": 106.8532,
       "created_at": "2026-09-10T08:00:00.000Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
-      "id": "ord_c910a687dfa6",
-      "invoice_number": "INV-TNK-20260911-6436",
+      "id": "ord_demo_002",
+      "invoice_number": "INV-TNK-202609-0002",
       "buyer_id": "usr_buyer_001",
       "store_id": "store_001",
-      "animal_id": "anm_001",
-      "base_price": 48500000,
+      "animal_id": "anm_002",
+      "base_price": 8500000,
       "store_discount": 0,
       "admin_discount": 0,
-      "shipping_fee": 703600,
-      "shipping_subsidy": 0,
-      "service_fee": 35000,
-      "grand_total": 49238600,
+      "shipping_fee": 250000,
+      "shipping_subsidy": 100000,
+      "service_fee": 25000,
+      "grand_total": 8675000,
       "payment_method": "MANUAL_TRANSFER",
-      "payment_status": "UNPAID",
-      "payment_proof_url": "",
-      "status": "AWAITING_PAYMENT",
-      "courier_id": null,
+      "payment_status": "PAID",
+      "payment_proof_url": "https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=600&auto=format&fit=crop&q=80",
+      "status": "COMPLETED",
+      "courier_id": "usr_courier_001",
       "logistics_type": "OFFICIAL_COURIER",
-      "tracking_number": "TRK-TNK-83210",
-      "delivery_address": "Jl. Tebet Barat Dalam VII No. 14, Jakarta Selatan",
-      "dest_lat": -6.2415,
-      "dest_lng": 106.8532,
-      "created_at": "2026-09-11T05:14:50.784Z",
-      "updated_at": "2026-09-11T05:14:50.784Z"
+      "tracking_number": "TRK-TNK-88913",
+      "delivery_address": "Jl. Margonda Raya No. 100, Depok, Jawa Barat",
+      "dest_lat": -6.3725,
+      "dest_lng": 106.8322,
+      "created_at": "2026-09-08T09:00:00.000Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "ord_demo_003",
+      "invoice_number": "INV-TNK-202609-0003",
+      "buyer_id": "usr_buyer_001",
+      "store_id": "store_002",
+      "animal_id": "anm_003",
+      "base_price": 12000000,
+      "store_discount": 500000,
+      "admin_discount": 0,
+      "shipping_fee": 300000,
+      "shipping_subsidy": 150000,
+      "service_fee": 30000,
+      "grand_total": 11680000,
+      "payment_method": "MANUAL_TRANSFER",
+      "payment_status": "PAID",
+      "payment_proof_url": "https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=600&auto=format&fit=crop&q=80",
+      "status": "COMPLETED",
+      "courier_id": "usr_courier_001",
+      "logistics_type": "OFFICIAL_COURIER",
+      "tracking_number": "TRK-TNK-88914",
+      "delivery_address": "Jl. Asia Afrika No. 20, Bandung, Jawa Barat",
+      "dest_lat": -6.9214,
+      "dest_lng": 107.6106,
+      "created_at": "2026-09-05T11:00:00.000Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "order_tracking_logs": [
@@ -545,18 +417,6 @@
       "notes": "Pemeriksaan kesehatan lolos dan hewan dalam perjalanan dengan armada TRK-TNK-88912.",
       "ip_address": "36.88.12.94",
       "recorded_at": "2026-09-10T10:30:00.000Z"
-    },
-    {
-      "id": "ord_388c1617532e",
-      "order_id": "ord_c910a687dfa6",
-      "actor_id": "usr_buyer_001",
-      "actor_role": "BUYER",
-      "from_status": "NONE",
-      "to_status": "AWAITING_PAYMENT",
-      "notes": "Pesanan dibuat dengan invoice INV-TNK-20260911-6436. Total: Rp 49.238.600",
-      "ip_address": "::1",
-      "created_at": "2026-09-11T05:14:50.818Z",
-      "updated_at": "2026-09-11T05:14:50.818Z"
     }
   ],
   "courier_fleets": [
@@ -568,8 +428,8 @@
       "driver_name": "Bambang Sudiro",
       "phone_number": "+6287899887766",
       "is_active": true,
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "chats": [
@@ -607,7 +467,33 @@
       "media_urls": [
         "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=600&auto=format&fit=crop&q=80"
       ],
-      "created_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "rev_002",
+      "order_id": "ord_demo_002",
+      "user_id": "usr_buyer_001",
+      "store_id": "store_001",
+      "animal_id": "anm_002",
+      "rating": 5,
+      "weight_match_rating": 5,
+      "comment": "Tanduk dan postur domba garut sangat gagah. Surat SKKH karantina dinas lengkap dan timbangan ditimbang ulang di depan rumah pas 75 kg.",
+      "media_urls": [
+        "https://images.unsplash.com/photo-1484557052118-f32bd25b45b5?w=600&auto=format&fit=crop&q=80"
+      ],
+      "created_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "rev_003",
+      "order_id": "ord_demo_003",
+      "user_id": "usr_buyer_001",
+      "store_id": "store_002",
+      "animal_id": "anm_003",
+      "rating": 5,
+      "weight_match_rating": 5,
+      "comment": "Pengantaran dengan armada pendingin berjalan lancar dari Bandung ke Jakarta. Sopir kurir ramah dan hewan sangat sehat aktif.",
+      "media_urls": [],
+      "created_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "vouchers": [
@@ -625,8 +511,8 @@
       "end_time": "2026-12-31T23:59:59.000Z",
       "quota": 100,
       "used_count": 8,
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     },
     {
       "id": "vch_002",
@@ -642,8 +528,8 @@
       "end_time": "2026-12-31T23:59:59.000Z",
       "quota": 200,
       "used_count": 15,
-      "created_at": "2026-09-11T02:40:47.078Z",
-      "updated_at": "2026-09-11T02:40:47.078Z"
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ],
   "system_settings": [
@@ -654,7 +540,7 @@
         "app_name": "Ternakmart",
         "tagline": "Platform E-Commerce Peternakan & Logistik Armada Mandiri Terpercaya",
         "app_logo_url": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=128&auto=format&fit=crop&q=80",
-        "app_favicon_url": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=128&auto=format&fit=crop&q=80",
+        "app_favicon_url": "https://cdn-icons-png.flaticon.com/512/2395/2395796.png",
         "active_theme": "emerald-agro",
         "timezone_offset": "Asia/Jakarta",
         "timezone_label": "WIB (UTC+7)",
@@ -682,16 +568,147 @@
             "account_number": "9928172635",
             "account_holder": "PT TERNAKMART INDONESIA"
           }
-        ],
-        "shipping_rate_per_km": 8500,
-        "enable_api_expedition": true,
-        "sosmed_instagram": "https://instagram.com/ternakmart",
-        "sosmed_facebook": "https://facebook.com/ternakmart",
-        "sosmed_tiktok": "https://tiktok.com/@ternakmart",
-        "sosmed_youtube": "https://youtube.com/@ternakmart",
-        "footer_text": "Platform resmi transaksi hewan ternak bersertifikat SKKH & live armada terpadu."
+        ]
       },
-      "updated_at": "2026-09-11T11:20:41.877Z"
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    }
+  ],
+  "badges": [
+    {
+      "id": "bdg_silver",
+      "name": "Silver Member",
+      "slug": "silver-member",
+      "icon_name": "Shield",
+      "badge_color": "#94a3b8",
+      "min_successful_orders": 0,
+      "min_turnover_idr": 0,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "bdg_gold",
+      "name": "Gold Merchant / Breeder",
+      "slug": "gold-breeder",
+      "icon_name": "Award",
+      "badge_color": "#eab308",
+      "min_successful_orders": 5,
+      "min_turnover_idr": 10000000,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "bdg_platinum",
+      "name": "Platinum Farm Partner",
+      "slug": "platinum-partner",
+      "icon_name": "Sparkles",
+      "badge_color": "#06b6d4",
+      "min_successful_orders": 20,
+      "min_turnover_idr": 50000000,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    }
+  ],
+  "user_addresses": [
+    {
+      "id": "addr_buyer_001",
+      "user_id": "usr_buyer_001",
+      "label": "Rumah Utama",
+      "recipient_name": "Ahmad Fauzi Rahman",
+      "phone_number": "+6285711223344",
+      "full_address": "Jl. Tebet Barat Dalam VII No. 14, RT 05 / RW 03, Kel. Tebet Barat, Kec. Tebet, Kota Jakarta Selatan, DKI Jakarta 12810",
+      "province": "DKI Jakarta",
+      "city": "Jakarta Selatan",
+      "district": "Tebet",
+      "postal_code": "12810",
+      "latitude": -6.2415,
+      "longitude": 106.8532,
+      "is_default": true,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "addr_seller_001",
+      "user_id": "usr_seller_001",
+      "label": "Kandang Utama Cijeruk",
+      "recipient_name": "H. Syamsul Bahri",
+      "phone_number": "+6281398765432",
+      "full_address": "Kompleks Peternakan Barokah, Jl. Raya Cijeruk Km. 5, Tajur Halang, Kec. Cijeruk, Kab. Bogor, Jawa Barat 16740",
+      "province": "Jawa Barat",
+      "city": "Bogor",
+      "district": "Cijeruk",
+      "postal_code": "16740",
+      "latitude": -6.6895,
+      "longitude": 106.7869,
+      "is_default": true,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    }
+  ],
+  "shipping_settings": [
+    {
+      "id": "ship_setting_global",
+      "goternak_enabled": true,
+      "goternak_base_fee": 20000,
+      "goternak_per_km_fee": 4000,
+      "goternak_min_distance_km": 1,
+      "third_party_enabled": true,
+      "third_party_api_key": "sandbox_ternak_api_key_88921",
+      "third_party_base_url": "https://api.ekspedisi-kargo.id/v1",
+      "active_couriers": [
+        "JNE Trucking (JTR)",
+        "SiCepat Gokil",
+        "Kalog Ternak"
+      ],
+      "is_production": false,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    }
+  ],
+  "hero_banners": [
+    {
+      "id": "hero_banner_001",
+      "badge": "FESTIVAL AKBAR QURBAN 1447H",
+      "categoryBadge": "🐂 SAPI & DOMBA SUPER",
+      "tag": "Kupon: QURBANBERKAH",
+      "title": "Diskon Spesial Ternak Hingga Rp 1.500.000",
+      "subtitle": "Free Titip Rawat & Pakan Konsentrat sampai H-3 Idul Adha. Bebas Ongkir Armada Khusus Jabodetabek & Bandung.",
+      "cta": "Beli Ternak Qurban",
+      "category": "SAPI",
+      "image": "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=1920&auto=format&fit=crop&q=85",
+      "is_active": true,
+      "sort_order": 1,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "hero_banner_002",
+      "badge": "LOGISTIK ARMADA MANDIRI",
+      "categoryBadge": "🚚 ARMADA KHUSUS",
+      "tag": "Live GPS Tracking",
+      "title": "Truk Pengantar Ber-AC & Checkpoint Pakan",
+      "subtitle": "Pantau posisi GPS truk secara langsung ala Gojek. Hewan dipastikan rileks, diberi pakan & air minum di rest stop perjalanan.",
+      "cta": "Lacak & Beli Ternak",
+      "category": "KAMBING",
+      "image": "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1920&auto=format&fit=crop&q=85",
+      "is_active": true,
+      "sort_order": 2,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
+    },
+    {
+      "id": "hero_banner_003",
+      "badge": "JAMINAN 100% RESMI",
+      "categoryBadge": "✅ SKKH VERIFIED",
+      "tag": "Terverifikasi Dinas",
+      "title": "Sertifikat SKKH & Bebas Penyakit PMK",
+      "subtitle": "Seluruh hewan lolos uji laboratorium karantina dinas peternakan. Garansi timbangan bobot riil 100% akurat.",
+      "cta": "Cek Hewan Ber-SKKH",
+      "category": "DOMBA",
+      "image": "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=1920&auto=format&fit=crop&q=85",
+      "is_active": true,
+      "sort_order": 3,
+      "created_at": "2026-09-14T10:47:31.409Z",
+      "updated_at": "2026-09-14T10:47:31.409Z"
     }
   ]
 }

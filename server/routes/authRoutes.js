@@ -8,6 +8,7 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.get('/me', authenticate, authController.getMe);
 router.put('/profile', authenticate, authController.updateProfile);
+router.post('/resolve-location', authController.resolveLocation);
 
 // Admin User Management routes
 router.get('/users', authenticate, authorize(['ADMIN']), authController.getAllUsers);

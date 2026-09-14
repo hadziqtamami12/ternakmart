@@ -113,7 +113,7 @@ export default function SellerDashboardPage({ onNavigate, onEditLivestock }) {
       <div className="bg-theme-card border border-theme-border rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <img
-            src={store.farm_photo_url || 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&auto=format&fit=crop&q=80'}
+            src={store.farm_photo_url || 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&auto=format&fit=crop&q=80'}
             alt={store.store_name}
             className="w-16 h-16 rounded-2xl object-cover border border-theme-border flex-shrink-0"
           />

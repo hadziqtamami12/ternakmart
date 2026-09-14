@@ -13,12 +13,7 @@ export function CartProvider({ children }) {
 
   // Load cart from server if authenticated, or localStorage if guest
   const fetchCart = async () => {
-    // Super Admin does not operate a buyer cart
-    if (user?.role === 'ADMIN') {
-      setCart({ id: 'admin_cart', items: [] });
-      return;
-    }
-
+    // Admin also allowed to test cart
     if (isAuthenticated) {
       try {
         setLoading(true);
@@ -70,17 +65,28 @@ export function CartProvider({ children }) {
     }
   };
 
+  const [cartToast, setCartToast] = useState('');
+  const showToast = (message) => {
+    setCartToast(message);
+    setTimeout(() => setCartToast(''), 3000);
+  };
+
   useEffect(() => {
     fetchCart();
   }, [isAuthenticated]);
 
   const addToCart = async (animal, notes = '', quantity = 1) => {
     const qty = Math.max(1, parseInt(quantity) || 1);
+    const itemTitle = typeof animal === 'object' ? (animal.title || 'Ternak') : 'Hewan Ternak';
+
     if (isAuthenticated) {
       const animalId = typeof animal === 'object' ? animal.id : animal;
       const res = await api.post('/carts/add', { animal_id: animalId, notes, quantity: qty });
       if (res.success) {
         await fetchCart();
+        showToast(`✓ ${itemTitle} ditambahkan ke keranjang!`);
+      } else {
+        showToast(`⚠️ ${res.message || 'Gagal menambahkan ternak'}`);
       }
       return res;
     } else {
@@ -93,7 +99,10 @@ export function CartProvider({ children }) {
         } catch (e) {}
       }
 
-      if (!animalObj) return { success: false, message: 'Hewan tidak ditemukan' };
+      if (!animalObj) {
+        showToast('⚠️ Hewan tidak ditemukan');
+        return { success: false, message: 'Hewan tidak ditemukan' };
+      }
 
       const currentItems = cart.items || [];
       const existingIdx = currentItems.findIndex(i => i.animal_id === animalObj.id);
@@ -124,6 +133,7 @@ export function CartProvider({ children }) {
       }
       setCart({ id: 'guest_cart', items: updated });
       localStorage.setItem('ternakmart_guest_cart', JSON.stringify(updated));
+      showToast(`✓ ${itemTitle} ditambahkan ke keranjang!`);
       return { success: true, message: 'Ditambahkan ke keranjang belanja!' };
     }
   };
@@ -168,25 +178,17 @@ export function CartProvider({ children }) {
   };
 
   const removeFromCart = async (animalId) => {
-    if (isAuthenticated) {
-      const res = await api.delete(`/carts/item/${animalId}`);
-      if (res.success) {
-        await fetchCart();
-      }
-      return res;
-    } else {
-      const updated = (cart.items || []).filter(i => i.animal_id !== animalId);
-      setCart({ id: 'guest_cart', items: updated });
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(updated));
-      return { success: true };
-    }
+    return await updateQuantity(animalId, 0);
   };
 
   const clearCart = async () => {
     if (isAuthenticated) {
-      await api.delete('/carts/clear');
+      try {
+        await api.delete('/carts/clear');
+        await fetchCart();
+      } catch (e) {}
     }
-    setCart({ id: isAuthenticated ? cart.id : 'guest_cart', items: [] });
+    setCart({ id: 'guest_cart', items: [] });
     localStorage.removeItem('ternakmart_guest_cart');
     return { success: true };
   };
@@ -209,10 +211,24 @@ export function CartProvider({ children }) {
         bulkDelete,
         removeFromCart,
         clearCart,
-        refreshCart: fetchCart
+        refreshCart: fetchCart,
+        showToast
       }}
     >
       {children}
+
+      {/* Global Bottom-Right Toast for Add to Cart */}
+      {cartToast && (
+        <div className="fixed bottom-6 right-6 z-[9999] bg-slate-900/95 border border-emerald-500/40 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+            ✓
+          </div>
+          <div className="min-w-0 pr-2">
+            <p className="text-xs font-bold truncate max-w-xs">{cartToast}</p>
+            <p className="text-[10px] text-slate-400">Item keranjang berhasil diperbarui.</p>
+          </div>
+        </div>
+      )}
     </CartContext.Provider>
   );
 }

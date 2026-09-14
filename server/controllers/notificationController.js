@@ -56,3 +56,26 @@ exports.triggerDemoNotification = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal memicu notifikasi.' });
   }
 };
+
+// Web Push subscription registration
+exports.subscribePush = async (req, res) => {
+  try {
+    const { subscription } = req.body;
+    if (!subscription || !subscription.endpoint) {
+      return res.status(400).json({ success: false, message: 'Data subscription tidak lengkap.' });
+    }
+
+    const pushService = require('../services/push-notification');
+    const userAgent = req.headers['user-agent'] || 'Browser';
+    const record = await pushService.subscribe(req.user.id, subscription, userAgent);
+
+    return res.json({
+      success: true,
+      message: 'Langganan Web Push berhasil didaftarkan.',
+      data: record
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Gagal mendaftarkan push notification: ' + err.message });
+  }
+};
+

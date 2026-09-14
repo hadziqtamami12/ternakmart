@@ -47,7 +47,7 @@ class NotificationService {
     return this.notifications.filter(n => (n.user_id === userId || n.user_id === 'ALL') && !n.is_read).length;
   }
 
-  send(userId, { title, message, type = 'GENERAL', reference_id = null }) {
+  send(userId, { title, message, type = 'GENERAL', reference_id = null, url = null }) {
     const notif = {
       id: `notif_${uuidv4().replace(/-/g, '').slice(0, 10)}`,
       user_id: userId,
@@ -55,6 +55,7 @@ class NotificationService {
       message,
       type,
       reference_id,
+      url: url || (type === 'CHAT_MESSAGE' ? '/chat' : '/orders'),
       is_read: false,
       created_at: new Date().toISOString()
     };
@@ -63,6 +64,22 @@ class NotificationService {
     if (this.notifications.length > 200) {
       this.notifications.pop();
     }
+
+    // Trigger Web Push Notification asynchronously
+    try {
+      const pushService = require('./push-notification');
+      pushService.sendToUser(userId, {
+        title,
+        body: message,
+        data: {
+          url: notif.url,
+          reference_id
+        }
+      }).catch(err => {
+        console.warn('[Push Dispatch Warning]:', err.message);
+      });
+    } catch (e) {}
+
     return notif;
   }
 

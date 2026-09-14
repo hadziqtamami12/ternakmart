@@ -4,12 +4,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 const ThemeContext = createContext(null);
 
 export const THEMES = [
-  { id: 'emerald-agro',        name: 'Emerald Agro',        desc: 'Hijau segar natural (Default)',          color: '#059669', bg: '#f8fafc', preview: ['#f8fafc', '#059669', '#f59e0b'] },
-  { id: 'charcoal-midnight',   name: 'Charcoal Midnight',   desc: 'Dark mode kontras tinggi slate-zinc',    color: '#10b981', bg: '#090d16', preview: ['#090d16', '#10b981', '#fbbf24'] },
-  { id: 'warm-earth',          name: 'Warm Earth',          desc: 'Terracotta amber pedesaan premium',      color: '#c2410c', bg: '#faf7f2', preview: ['#faf7f2', '#c2410c', '#d97706'] },
-  { id: 'ocean-blue',          name: 'Ocean Blue',          desc: 'Biru profesional modern',                color: '#2563eb', bg: '#f0f4ff', preview: ['#f0f4ff', '#2563eb', '#7c3aed'] },
-  { id: 'rose-pink',           name: 'Rose Pink',           desc: 'Merah muda elegan cerah',                color: '#e11d48', bg: '#fff1f2', preview: ['#fff1f2', '#e11d48', '#f97316'] },
-  { id: 'purple-royal',        name: 'Purple Royal',        desc: 'Ungu kerajaan mewah premium',            color: '#7c3aed', bg: '#faf5ff', preview: ['#faf5ff', '#7c3aed', '#ec4899'] },
+  { id: 'meadow-emerald',    name: 'Meadow Emerald',    desc: 'Hijau agrikultur subur & asri (Default)', primary: '#15803D', accent: '#86EFAC', surface: '#F0FDF4', color: '#15803D', bg: '#F0FDF4', preview: ['#F0FDF4', '#15803D', '#86EFAC'] },
+  { id: 'sunset-terracotta', name: 'Sunset Terracotta', desc: 'Nuansa tanah & peternakan hangat',       primary: '#C2410C', accent: '#FDBA74', surface: '#FFF7ED', color: '#C2410C', bg: '#FFF7ED', preview: ['#FFF7ED', '#C2410C', '#FDBA74'] },
+  { id: 'slate-agrotech',    name: 'Slate Agrotech',    desc: 'Modern dark industrial tech',            primary: '#38BDF8', accent: '#38BDF8', surface: '#0F172A', color: '#38BDF8', bg: '#0F172A', preview: ['#0F172A', '#38BDF8', '#38BDF8'] },
+  { id: 'pasture-azure',     name: 'Pasture Azure',     desc: 'Biru maritim/agribisnis profesional',     primary: '#0369A1', accent: '#7DD3FC', surface: '#F0F9FF', color: '#0369A1', bg: '#F0F9FF', preview: ['#F0F9FF', '#0369A1', '#7DD3FC'] },
 ];
 
 // Register global setter immediately (synchronously) to avoid race conditions
@@ -21,18 +19,14 @@ window.__setServerTheme = (theme) => {
 };
 
 export function ThemeProvider({ children }) {
-  const [marketplaceTheme, setMarketplaceTheme] = useState('emerald-agro');
+  const [marketplaceTheme, setMarketplaceTheme] = useState('meadow-emerald');
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [serverTheme, setServerThemeState] = useState(null);
   const initializedRef = useRef(false);
 
-  // Apply theme to document
-  const applyTheme = useCallback((theme, adminMode) => {
-    if (adminMode) {
-      document.documentElement.removeAttribute('data-theme');
-    } else {
-      document.documentElement.setAttribute('data-theme', theme);
-    }
+  // Apply theme to document (both landing page and admin share the theme)
+  const applyTheme = useCallback((theme) => {
+    document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('ternakmart_theme', theme);
   }, []);
 
@@ -49,7 +43,7 @@ export function ThemeProvider({ children }) {
     if (!initializedRef.current) {
       initializedRef.current = true;
       const stored = localStorage.getItem('ternakmart_theme');
-      const initialTheme = stored || 'emerald-agro';
+      const initialTheme = stored || 'meadow-emerald';
       setMarketplaceTheme(initialTheme);
       applyTheme(initialTheme, isAdminMode);
     }

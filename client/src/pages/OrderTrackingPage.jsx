@@ -80,26 +80,26 @@ export default function OrderTrackingPage({ orderId, onBack, onNavigate, onStart
   const latestLog = trackingLogs.length > 0 ? trackingLogs[0] : null;
 
   const courierPos = latestLog ? {
-    lat: latestLog.latitude,
-    lng: latestLog.longitude,
+    lat: parseFloat(latestLog.latitude),
+    lng: parseFloat(latestLog.longitude),
     driverName: order.courier?.name || 'Driver Logistik Ternak',
     vehiclePlate: order.tracking_number
   } : (order.courier ? {
-    lat: order.dest_lat + 0.05,
-    lng: order.dest_lng - 0.04,
+    lat: parseFloat(order.dest_lat || -6.2415) + 0.03,
+    lng: parseFloat(order.dest_lng || 106.8132) - 0.03,
     driverName: order.courier.name,
     vehiclePlate: order.tracking_number
   } : null);
 
   const origin = order.store ? {
-    lat: order.store.latitude,
-    lng: order.store.longitude,
+    lat: parseFloat(order.store.latitude || -6.6895),
+    lng: parseFloat(order.store.longitude || 106.7869),
     name: order.store.store_name
   } : { lat: -6.6895, lng: 106.7869, name: 'Kandang Asal' };
 
   const destination = {
-    lat: order.dest_lat,
-    lng: order.dest_lng,
+    lat: parseFloat(order.dest_lat || -6.2415),
+    lng: parseFloat(order.dest_lng || 106.8132),
     name: order.delivery_address
   };
 

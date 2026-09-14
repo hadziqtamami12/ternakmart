@@ -15,23 +15,33 @@ function calculateDistanceKm(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// Calculate livestock shipping rate based on distance and animal category/weight
-function estimateShippingRate(distanceKm, weightKg, category) {
-  // Base tariff per km for livestock transport with specialized air-flow pickup/truck
-  let baseRatePerKm = 5000;
+// Calculate livestock shipping rate based on dynamic settings, distance, and animal category/weight
+async function estimateShippingRate(distanceKm, weightKg, category) {
+  let baseFee = 20000;
+  let perKmFee = 4000;
+  try {
+    const settings = await db.findMany('shipping_settings', {});
+    if (settings.length > 0 && settings[0].goternak_base_fee !== undefined) {
+      baseFee = parseFloat(settings[0].goternak_base_fee);
+      perKmFee = parseFloat(settings[0].goternak_per_km_fee);
+    }
+  } catch (e) {}
+
+  // Adjust for heavy animal transport handling
+  let multiplier = 1.0;
   if (category === 'SAPI' || category === 'KERBAU' || weightKg > 300) {
-    baseRatePerKm = 9000; // Specialized livestock truck with water spray & partition
+    multiplier = 2.0; // Specialized truck with partition & water spray
   } else if (category === 'DOMBA' || category === 'KAMBING') {
-    baseRatePerKm = 4500;
+    multiplier = 1.25;
   }
-  const minBaseFee = 250000; // Minimum handling & disinfectant fee
-  const calculated = Math.round(minBaseFee + (distanceKm * baseRatePerKm));
-  return Math.max(minBaseFee, calculated);
+
+  const calculated = Math.round(baseFee + (distanceKm * perKmFee * multiplier));
+  return Math.max(baseFee, calculated);
 }
 
 exports.calculateEstimate = async (req, res) => {
   try {
-    const { animal_id, dest_lat, dest_lng, voucher_code } = req.body;
+    const { animal_id, dest_lat, dest_lng, voucher_code, logistics_type } = req.body;
 
     const animal = await db.findById('animals', animal_id);
     if (!animal) {
@@ -54,7 +64,14 @@ exports.calculateEstimate = async (req, res) => {
     let shipping_subsidy = 0;
 
     // Shipping calculation
-    const shipping_fee = estimateShippingRate(distanceKm, animal.weight_kg, animal.category);
+    let shipping_fee = await estimateShippingRate(distanceKm, animal.weight_kg, animal.category);
+
+    // Fetch shipping settings for third party options
+    let shippingSettings = null;
+    try {
+      const s = await db.findMany('shipping_settings', {});
+      if (s.length > 0) shippingSettings = s[0];
+    } catch (e) {}
 
     // Check Voucher
     if (voucher_code) {
@@ -100,6 +117,7 @@ exports.calculateEstimate = async (req, res) => {
         service_fee,
         grand_total,
         distance_km: distanceKm,
+        shipping_settings: shippingSettings,
         store_location: { latitude: store.latitude, longitude: store.longitude, farm_address: store.farm_address },
         destination: { latitude: userLat, longitude: userLng }
       }

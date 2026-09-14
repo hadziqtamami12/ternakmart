@@ -66,11 +66,12 @@ exports.getMessages = async (req, res) => {
       (c.sender_id === targetUserId && c.receiver_id === currentUserId)
     );
 
-    // Mark as read
+    // Mark as read when opened/read by current receiver
     for (const msg of messages) {
-      if (msg.receiver_id === currentUserId && !msg.is_read) {
-        await db.update('chats', msg.id, { is_read: true });
+      if (msg.receiver_id === currentUserId && (!msg.is_read || msg.status !== 'read')) {
+        await db.update('chats', msg.id, { is_read: true, status: 'read' });
         msg.is_read = true;
+        msg.status = 'read';
       }
     }
 
@@ -90,16 +91,24 @@ exports.sendMessage = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Harap sertakan ID penerima dan isi pesan.' });
     }
 
+    // Determine recipient online state
+    // In e-commerce chat: check if recipient is active recently or has socket/session
+    // If receiver is not actively in conversation: initial status is 'sent' (1 check), else 'delivered' (2 checks)
+    const receiver = await db.findById('users', receiver_id);
+    const isReceiverOnline = Boolean(receiver && receiver.is_online === true);
+    const initialStatus = isReceiverOnline ? 'delivered' : 'sent';
+
     const newChat = await db.create('chats', {
       sender_id: req.user.id,
       receiver_id,
       animal_context_id: animal_context_id || null,
       message,
       negotiated_price: negotiated_price ? parseFloat(negotiated_price) : null,
-      is_read: false
+      is_read: false,
+      status: initialStatus
     });
 
-    // Notify receiver
+    // Notify receiver & dispatch Web Push Notification
     let notifTitle = `💬 Pesan Baru dari ${req.user.name}`;
     let notifMsg = message;
     if (negotiated_price) {
@@ -111,7 +120,8 @@ exports.sendMessage = async (req, res) => {
       title: notifTitle,
       message: notifMsg,
       type: 'CHAT_MESSAGE',
-      reference_id: newChat.id
+      reference_id: newChat.id,
+      url: '/chat'
     });
 
     return res.status(201).json({
@@ -121,5 +131,32 @@ exports.sendMessage = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Gagal mengirim pesan chat.' });
+  }
+};
+
+exports.getContacts = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const allUsers = await db.findMany('users', {});
+    const stores = await db.findMany('stores', {});
+
+    const contacts = allUsers
+      .filter(u => u.id !== currentUserId && u.role !== 'ADMIN')
+      .map(u => {
+        const store = stores.find(s => s.user_id === u.id);
+        return {
+          id: u.id,
+          name: u.name,
+          username: u.username,
+          role: u.role,
+          avatar_url: u.avatar_url,
+          store_name: store ? store.store_name : null,
+          store_tier: store ? store.tier : null
+        };
+      });
+
+    return res.json({ success: true, data: contacts });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Gagal mengambil kontak.' });
   }
 };

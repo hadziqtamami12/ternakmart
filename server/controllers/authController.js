@@ -76,7 +76,8 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { identifier, password } = req.body; // identifier can be email or username
+    const identifier = req.body.identifier || req.body.username || req.body.email;
+    const password = req.body.password;
 
     if (!identifier || !password) {
       return res.status(400).json({
@@ -87,16 +88,24 @@ exports.login = async (req, res) => {
 
     const cleanIdentifier = identifier.trim().toLowerCase();
 
-    // Query by email first or username
+    // Query by email first or username safely
     const allUsers = await db.findMany('users', {});
     const user = allUsers.find(
-      u => u.email.toLowerCase() === cleanIdentifier || u.username.toLowerCase() === cleanIdentifier
+      u => (u.email && typeof u.email === 'string' && u.email.trim().toLowerCase() === cleanIdentifier) ||
+           (u.username && typeof u.username === 'string' && u.username.trim().toLowerCase() === cleanIdentifier)
     );
 
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Akun tidak ditemukan. Periksa kembali email atau username Anda.'
+      });
+    }
+
+    if (!user.password_hash) {
+      return res.status(401).json({
+        success: false,
+        message: 'Akun ini belum memiliki kata sandi aktif. Silakan hubungi administrator.'
       });
     }
 
@@ -140,17 +149,32 @@ exports.getMe = async (req, res) => {
 
     const { password_hash: _, ...safeUser } = user;
 
-    // Check if seller has store
+    // Check if user has a store
     let store = null;
-    if (user.role === 'SELLER') {
-      const stores = await db.findMany('stores', { user_id: user.id });
-      if (stores.length > 0) store = stores[0];
+    const stores = await db.findMany('stores', { user_id: user.id });
+    if (stores.length > 0) {
+      store = stores[0];
     }
+
+    // Attach badge object
+    let badge = null;
+    if (user.badge_id) {
+      badge = await db.findById('badges', user.badge_id);
+    }
+    if (!badge) {
+      // Default to Silver Member
+      const defaultBadges = await db.findMany('badges', { slug: 'silver-member' });
+      if (defaultBadges.length > 0) badge = defaultBadges[0];
+    }
+
+    const hasStore = Boolean(store || user.has_store);
 
     return res.json({
       success: true,
       data: {
         ...safeUser,
+        has_store: hasStore,
+        badge,
         store
       }
     });
@@ -324,6 +348,170 @@ exports.deleteAdminUser = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Gagal menghapus pengguna.' });
+  }
+};
+
+// Helper: Parse coordinates from URL or string
+function parseCoordinatesFromText(text) {
+  if (!text) return null;
+  // Match @lat,lng
+  const atMatch = text.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (atMatch) return { latitude: parseFloat(atMatch[1]), longitude: parseFloat(atMatch[2]) };
+
+  // Match !3dlat!4dlng (Google Maps protobuf in URL)
+  const protoMatch = text.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (protoMatch) return { latitude: parseFloat(protoMatch[1]), longitude: parseFloat(protoMatch[2]) };
+
+  // Match q=lat,lng or ll=lat,lng
+  const qMatch = text.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (qMatch) return { latitude: parseFloat(qMatch[1]), longitude: parseFloat(qMatch[2]) };
+
+  // Match raw lat, lng pair (e.g. -6.2088, 106.8456)
+  const rawMatch = text.match(/(-?\d+\.\d{3,})\s*,\s*(-?\d+\.\d{3,})/);
+  if (rawMatch) return { latitude: parseFloat(rawMatch[1]), longitude: parseFloat(rawMatch[2]) };
+
+  return null;
+}
+
+exports.resolveLocation = async (req, res) => {
+  try {
+    const { mapUrl, address, latitude: inputLat, longitude: inputLng } = req.body;
+
+    // 1. If coordinates already provided, optionally reverse-geocode to get friendly address
+    if (inputLat !== undefined && inputLng !== undefined) {
+      const lat = parseFloat(inputLat);
+      const lng = parseFloat(inputLng);
+      let resolvedAddress = address || '';
+
+      if (!resolvedAddress) {
+        try {
+          const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+            headers: { 'User-Agent': 'TernakMart/1.0 (info@ternakmart.id)' }
+          });
+          const revData = await revRes.json();
+          if (revData && revData.display_name) {
+            resolvedAddress = revData.display_name;
+          }
+        } catch (e) {}
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          latitude: lat,
+          longitude: lng,
+          address: resolvedAddress,
+          source: 'gps_or_coordinates'
+        }
+      });
+    }
+
+    // 2. If Google Maps / WA shareloc link is provided
+    if (mapUrl && typeof mapUrl === 'string' && mapUrl.trim().length > 0) {
+      const trimmedUrl = mapUrl.trim();
+      let coords = parseCoordinatesFromText(trimmedUrl);
+
+      // If coords not immediately in string and it's a URL, follow HTTP redirect
+      if (!coords && (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://'))) {
+        try {
+          const response = await fetch(trimmedUrl, {
+            method: 'GET',
+            redirect: 'follow',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+          });
+          const finalUrl = response.url;
+          coords = parseCoordinatesFromText(finalUrl);
+
+          // If still not found in URL, search within HTML body for coordinates
+          if (!coords) {
+            const html = await response.text();
+            coords = parseCoordinatesFromText(html);
+          }
+        } catch (fetchErr) {
+          console.warn('Redirect resolution error:', fetchErr.message);
+        }
+      }
+
+      if (coords) {
+        // Reverse-geocode to get friendly address name
+        let resolvedAddress = address || '';
+        try {
+          const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.latitude}&lon=${coords.longitude}`, {
+            headers: { 'User-Agent': 'TernakMart/1.0 (info@ternakmart.id)' }
+          });
+          const revData = await revRes.json();
+          if (revData && revData.display_name) {
+            resolvedAddress = revData.display_name;
+          }
+        } catch (e) {}
+
+        return res.json({
+          success: true,
+          data: {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            address: resolvedAddress || 'Lokasi dari Google Maps',
+            source: 'google_maps_link'
+          }
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: 'Tidak dapat mengekstrak titik koordinat dari tautan peta yang diberikan. Pastikan tautan valid.'
+      });
+    }
+
+    // 3. If address text is provided, geocode using OpenStreetMap Nominatim with smart fallbacks
+    if (address && typeof address === 'string' && address.trim().length > 0) {
+      const candidates = [
+        address.trim(),
+        address.replace(/(?:no\.?\s*\d+|rt\.?\s*\d+|rw\.?\s*\d+|blok\s*[a-z0-9]+)/gi, '').replace(/\s{2,}/g, ' ').trim(),
+        address.split(',').slice(-2).join(', ').trim()
+      ].filter(Boolean);
+
+      for (const query of candidates) {
+        try {
+          const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=1`;
+          const nomRes = await fetch(nomUrl, {
+            headers: { 'User-Agent': 'TernakMart/1.0 (info@ternakmart.id)' }
+          });
+          const data = await nomRes.json();
+
+          if (data && data.length > 0) {
+            return res.json({
+              success: true,
+              data: {
+                latitude: parseFloat(data[0].lat),
+                longitude: parseFloat(data[0].lon),
+                address: data[0].display_name,
+                source: 'address_geocoding'
+              }
+            });
+          }
+        } catch (geoErr) {
+          console.warn('Geocoding attempt error:', geoErr.message);
+        }
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: 'Alamat tidak ditemukan pada peta. Coba tambahkan nama kota atau gunakan opsi GPS / Google Maps.'
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: 'Mohon sertakan tautan Google Maps, koordinat GPS, atau alamat lengkap.'
+    });
+  } catch (err) {
+    console.error('Resolve location error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan saat memproses lokasi.'
+    });
   }
 };
 

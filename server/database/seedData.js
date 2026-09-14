@@ -1,7 +1,13 @@
-// seedData.js - Initial Seeds for Ternakmart (Production-grade Realistic Data)
-const bcrypt = require('bcryptjs');
-
-const defaultPasswordHash = bcrypt.hashSync('Password123!', 10);
+let defaultPasswordHash = '$2a$10$CwTycUXWue0Thq9StjUM0uJ8w7c06lIeW4P9d6L2NqE3Y5nUf1RkC';
+try {
+  const bcrypt = require('bcryptjs');
+  defaultPasswordHash = bcrypt.hashSync('Password123!', 10);
+} catch (e) {
+  try {
+    const bcrypt = require('../node_modules/bcryptjs');
+    defaultPasswordHash = bcrypt.hashSync('Password123!', 10);
+  } catch (e2) {}
+}
 const now = new Date().toISOString();
 
 const users = [
@@ -314,7 +320,7 @@ const system_settings = [
       app_name: 'Ternakmart',
       tagline: 'Platform E-Commerce Peternakan & Logistik Armada Mandiri Terpercaya',
       app_logo_url: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=128&auto=format&fit=crop&q=80',
-      app_favicon_url: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
+      app_favicon_url: 'https://cdn-icons-png.flaticon.com/512/2395/2395796.png',
       active_theme: 'emerald-agro',
       timezone_offset: 'Asia/Jakarta',
       timezone_label: 'WIB (UTC+7)',
@@ -366,6 +372,58 @@ const orders = [
     dest_lat: -6.2415,
     dest_lng: 106.8532,
     created_at: '2026-09-10T08:00:00.000Z',
+    updated_at: now
+  },
+  {
+    id: 'ord_demo_002',
+    invoice_number: 'INV-TNK-202609-0002',
+    buyer_id: 'usr_buyer_001',
+    store_id: 'store_001',
+    animal_id: 'anm_002',
+    base_price: 8500000,
+    store_discount: 0,
+    admin_discount: 0,
+    shipping_fee: 250000,
+    shipping_subsidy: 100000,
+    service_fee: 25000,
+    grand_total: 8675000,
+    payment_method: 'MANUAL_TRANSFER',
+    payment_status: 'PAID',
+    payment_proof_url: 'https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=600&auto=format&fit=crop&q=80',
+    status: 'COMPLETED',
+    courier_id: 'usr_courier_001',
+    logistics_type: 'OFFICIAL_COURIER',
+    tracking_number: 'TRK-TNK-88913',
+    delivery_address: 'Jl. Margonda Raya No. 100, Depok, Jawa Barat',
+    dest_lat: -6.3725,
+    dest_lng: 106.8322,
+    created_at: '2026-09-08T09:00:00.000Z',
+    updated_at: now
+  },
+  {
+    id: 'ord_demo_003',
+    invoice_number: 'INV-TNK-202609-0003',
+    buyer_id: 'usr_buyer_001',
+    store_id: 'store_002',
+    animal_id: 'anm_003',
+    base_price: 12000000,
+    store_discount: 500000,
+    admin_discount: 0,
+    shipping_fee: 300000,
+    shipping_subsidy: 150000,
+    service_fee: 30000,
+    grand_total: 11680000,
+    payment_method: 'MANUAL_TRANSFER',
+    payment_status: 'PAID',
+    payment_proof_url: 'https://images.unsplash.com/photo-1580519542036-c47de6196ba5?w=600&auto=format&fit=crop&q=80',
+    status: 'COMPLETED',
+    courier_id: 'usr_courier_001',
+    logistics_type: 'OFFICIAL_COURIER',
+    tracking_number: 'TRK-TNK-88914',
+    delivery_address: 'Jl. Asia Afrika No. 20, Bandung, Jawa Barat',
+    dest_lat: -6.9214,
+    dest_lng: 107.6106,
+    created_at: '2026-09-05T11:00:00.000Z',
     updated_at: now
   }
 ];
@@ -518,6 +576,144 @@ const reviews = [
   }
 ];
 
+const badges = [
+  {
+    id: 'bdg_silver',
+    name: 'Silver Member',
+    slug: 'silver-member',
+    icon_name: 'Shield',
+    badge_color: '#94a3b8',
+    min_successful_orders: 0,
+    min_turnover_idr: 0,
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: 'bdg_gold',
+    name: 'Gold Merchant / Breeder',
+    slug: 'gold-breeder',
+    icon_name: 'Award',
+    badge_color: '#eab308',
+    min_successful_orders: 5,
+    min_turnover_idr: 10000000,
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: 'bdg_platinum',
+    name: 'Platinum Farm Partner',
+    slug: 'platinum-partner',
+    icon_name: 'Sparkles',
+    badge_color: '#06b6d4',
+    min_successful_orders: 20,
+    min_turnover_idr: 50000000,
+    created_at: now,
+    updated_at: now
+  }
+];
+
+const user_addresses = [
+  {
+    id: 'addr_buyer_001',
+    user_id: 'usr_buyer_001',
+    label: 'Rumah Utama',
+    recipient_name: 'Ahmad Fauzi Rahman',
+    phone_number: '+6285711223344',
+    full_address: 'Jl. Tebet Barat Dalam VII No. 14, RT 05 / RW 03, Kel. Tebet Barat, Kec. Tebet, Kota Jakarta Selatan, DKI Jakarta 12810',
+    province: 'DKI Jakarta',
+    city: 'Jakarta Selatan',
+    district: 'Tebet',
+    postal_code: '12810',
+    latitude: -6.2415,
+    longitude: 106.8532,
+    is_default: true,
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: 'addr_seller_001',
+    user_id: 'usr_seller_001',
+    label: 'Kandang Utama Cijeruk',
+    recipient_name: 'H. Syamsul Bahri',
+    phone_number: '+6281398765432',
+    full_address: 'Kompleks Peternakan Barokah, Jl. Raya Cijeruk Km. 5, Tajur Halang, Kec. Cijeruk, Kab. Bogor, Jawa Barat 16740',
+    province: 'Jawa Barat',
+    city: 'Bogor',
+    district: 'Cijeruk',
+    postal_code: '16740',
+    latitude: -6.6895,
+    longitude: 106.7869,
+    is_default: true,
+    created_at: now,
+    updated_at: now
+  }
+];
+
+const shipping_settings = [
+  {
+    id: 'ship_setting_global',
+    goternak_enabled: true,
+    goternak_base_fee: 20000,
+    goternak_per_km_fee: 4000,
+    goternak_min_distance_km: 1.0,
+    third_party_enabled: true,
+    third_party_api_key: 'sandbox_ternak_api_key_88921',
+    third_party_base_url: 'https://api.ekspedisi-kargo.id/v1',
+    active_couriers: ['JNE Trucking (JTR)', 'SiCepat Gokil', 'Kalog Ternak'],
+    is_production: false,
+    created_at: now,
+    updated_at: now
+  }
+];
+
+const hero_banners = [
+  {
+    id: 'hero_banner_001',
+    badge: 'FESTIVAL AKBAR QURBAN 1447H',
+    categoryBadge: '🐂 SAPI & DOMBA SUPER',
+    tag: 'Kupon: QURBANBERKAH',
+    title: 'Diskon Spesial Ternak Hingga Rp 1.500.000',
+    subtitle: 'Free Titip Rawat & Pakan Konsentrat sampai H-3 Idul Adha. Bebas Ongkir Armada Khusus Jabodetabek & Bandung.',
+    cta: 'Beli Ternak Qurban',
+    category: 'SAPI',
+    image: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=1920&auto=format&fit=crop&q=85',
+    is_active: true,
+    sort_order: 1,
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: 'hero_banner_002',
+    badge: 'LOGISTIK ARMADA MANDIRI',
+    categoryBadge: '🚚 ARMADA KHUSUS',
+    tag: 'Live GPS Tracking',
+    title: 'Truk Pengantar Ber-AC & Checkpoint Pakan',
+    subtitle: 'Pantau posisi GPS truk secara langsung ala Gojek. Hewan dipastikan rileks, diberi pakan & air minum di rest stop perjalanan.',
+    cta: 'Lacak & Beli Ternak',
+    category: 'KAMBING',
+    image: 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1920&auto=format&fit=crop&q=85',
+    is_active: true,
+    sort_order: 2,
+    created_at: now,
+    updated_at: now
+  },
+  {
+    id: 'hero_banner_003',
+    badge: 'JAMINAN 100% RESMI',
+    categoryBadge: '✅ SKKH VERIFIED',
+    tag: 'Terverifikasi Dinas',
+    title: 'Sertifikat SKKH & Bebas Penyakit PMK',
+    subtitle: 'Seluruh hewan lolos uji laboratorium karantina dinas peternakan. Garansi timbangan bobot riil 100% akurat.',
+    cta: 'Cek Hewan Ber-SKKH',
+    category: 'DOMBA',
+    image: 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=1920&auto=format&fit=crop&q=85',
+    is_active: true,
+    sort_order: 3,
+    created_at: now,
+    updated_at: now
+  }
+];
+
 module.exports = {
   users,
   stores,
@@ -530,5 +726,10 @@ module.exports = {
   chats,
   reviews,
   vouchers,
-  system_settings
+  system_settings,
+  badges,
+  user_addresses,
+  shipping_settings,
+  hero_banners
 };
+

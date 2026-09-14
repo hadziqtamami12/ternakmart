@@ -1,4 +1,4 @@
-// AdminOrdersPage.jsx - Order CRUD DataTable with Status Transitions, Proof Viewer & Per-Order Promo Customization
+// AdminOrdersPage.jsx - Order Management DataTable with Status Transitions, Proof Viewer & Per-Order Promo Customization
 import React, { useState, useEffect } from 'react';
 import {
   Package,
@@ -18,7 +18,8 @@ import {
   Tag,
   Percent,
   Edit2,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
@@ -144,8 +145,8 @@ export default function AdminOrdersPage() {
       accessor: 'invoice_number',
       render: (order) => (
         <div className="font-mono min-w-0">
-          <span className="font-bold text-white block truncate">{order.invoice_number}</span>
-          <span className="text-[10px] text-slate-500">{formatTime(order.created_at)}</span>
+          <span className="font-bold text-theme-text block truncate">{order.invoice_number}</span>
+          <span className="text-[10px] text-theme-muted">{formatTime(order.created_at)}</span>
         </div>
       )
     },
@@ -154,8 +155,8 @@ export default function AdminOrdersPage() {
       accessor: 'buyer.name',
       render: (order) => (
         <div className="min-w-0">
-          <span className="font-bold text-slate-200 block truncate">{order.buyer?.name || 'Pembeli'}</span>
-          <span className="text-[10px] text-slate-500">{order.buyer?.phone_number || '-'}</span>
+          <span className="font-bold text-theme-text block truncate">{order.buyer?.name || 'Pembeli'}</span>
+          <span className="text-[10px] text-theme-muted">{order.buyer?.phone_number || '-'}</span>
         </div>
       )
     },
@@ -167,13 +168,13 @@ export default function AdminOrdersPage() {
           <img
             src={order.animal?.images?.[0] || 'https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?w=100'}
             alt={order.animal?.title}
-            className="w-8 h-8 rounded-lg object-cover border border-slate-700 flex-shrink-0"
+            className="w-8 h-8 rounded-lg object-cover border border-theme-border flex-shrink-0"
           />
           <div className="min-w-0">
-            <span className="font-bold text-slate-200 block truncate max-w-[140px]">
+            <span className="font-bold text-theme-text block truncate max-w-[140px]">
               {order.animal?.title || 'Hewan Ternak'}
             </span>
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-theme-muted">
               {order.animal?.category} • {formatWeight(order.animal?.weight_kg)}
             </span>
           </div>
@@ -187,25 +188,25 @@ export default function AdminOrdersPage() {
         const totalDiscount = (parseFloat(order.store_discount || 0) + parseFloat(order.admin_discount || 0));
         return (
           <div className="min-w-0">
-            <span className="font-black text-emerald-400 block">{formatRupiah(order.grand_total)}</span>
+            <span className="font-black text-theme-primary block">{formatRupiah(order.grand_total)}</span>
             <div className="flex items-center gap-1.5 mt-0.5">
               {totalDiscount > 0 ? (
-                <span className="text-[10px] text-amber-400 font-bold flex items-center gap-0.5">
+                <span className="text-[10px] text-amber-500 font-bold flex items-center gap-0.5">
                   <Tag className="w-2.5 h-2.5" /> -{formatRupiah(totalDiscount)}
                 </span>
               ) : (
-                <span className="text-[10px] text-slate-500">Tanpa promo</span>
+                <span className="text-[10px] text-theme-muted">Tanpa promo</span>
               )}
               <button
                 onClick={() => handleOpenPromoModal(order)}
-                className="text-[10px] text-sky-400 hover:text-sky-300 font-bold underline"
+                className="text-[10px] text-theme-primary hover:underline font-bold"
                 title="Atur Promo Khusus Pesanan Ini"
               >
                 Ubah
               </button>
             </div>
             {order.voucher_code && (
-              <span className="text-[9px] bg-amber-500/20 text-amber-300 font-mono px-1 rounded block w-max mt-0.5">
+              <span className="text-[9px] bg-amber-500/20 text-amber-400 font-mono px-1 rounded block w-max mt-0.5">
                 Kupon: {order.voucher_code}
               </span>
             )}
@@ -221,12 +222,12 @@ export default function AdminOrdersPage() {
           {order.payment_proof_url ? (
             <button
               onClick={() => setSelectedProof(order.payment_proof_url)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-sky-400"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-theme-bg hover:bg-theme-card border border-theme-border text-[11px] font-bold text-theme-primary transition-colors"
             >
               <Eye className="w-3 h-3" /> Lihat Struk
             </button>
           ) : (
-            <span className="text-[10px] text-slate-500">Belum ada</span>
+            <span className="text-[10px] text-theme-muted">Belum ada</span>
           )}
         </div>
       )
@@ -246,7 +247,7 @@ export default function AdminOrdersPage() {
             <button
               onClick={() => handleUpdateStatus(order.id, 'ORDER_CONFIRMED', 'Struk transfer pembayaran diverifikasi valid oleh Admin')}
               disabled={updatingId === order.id}
-              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] shadow"
+              className="px-2.5 py-1 rounded-lg bg-theme-primary hover:bg-theme-primary-hover text-white font-black text-[10px] shadow"
             >
               Setujui
             </button>
@@ -256,7 +257,7 @@ export default function AdminOrdersPage() {
             value={order.status}
             onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
             disabled={updatingId === order.id}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-[10px] font-bold text-slate-300 focus:outline-none focus:border-emerald-500"
+            className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1 text-[10px] font-bold text-theme-text focus:outline-none focus:border-theme-primary cursor-pointer"
           >
             <option value="PENDING_PAYMENT">PENDING_PAYMENT</option>
             <option value="PAYMENT_VERIFICATION">PAYMENT_VERIFICATION</option>
@@ -271,23 +272,140 @@ export default function AdminOrdersPage() {
     }
   ];
 
+  if (promoModalOrder) {
+    return (
+      <div className="space-y-6 animate-in fade-in">
+        <div className="flex items-center gap-3 border-b border-theme-border pb-4">
+          <button
+            type="button"
+            onClick={() => setPromoModalOrder(null)}
+            className="p-2 rounded-xl bg-theme-card hover:bg-theme-bg border border-theme-border text-theme-muted hover:text-theme-text transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-theme-text tracking-tight flex items-center gap-2">
+              <Tag className="w-6 h-6 text-amber-500" />
+              <span>Atur Promo Khusus Pesanan</span>
+            </h1>
+            <p className="text-xs text-theme-muted mt-0.5 font-mono">
+              Invoice #{promoModalOrder.invoice_number}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-theme-card border border-theme-border rounded-2xl p-6 max-w-2xl space-y-6 shadow-sm">
+          <div className="p-4 rounded-xl bg-theme-bg border border-theme-border text-xs space-y-2">
+            <div className="flex justify-between text-theme-muted">
+              <span>Harga Dasar Hewan:</span>
+              <span className="font-bold text-theme-text">{formatRupiah(promoModalOrder.base_price)}</span>
+            </div>
+            <div className="flex justify-between text-theme-muted">
+              <span>Ongkos Kirim:</span>
+              <span className="text-theme-text">{formatRupiah(promoModalOrder.shipping_fee)}</span>
+            </div>
+            <div className="flex justify-between text-theme-muted">
+              <span>Biaya Layanan:</span>
+              <span className="text-theme-text">{formatRupiah(promoModalOrder.service_fee)}</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSavePromoOrder} className="space-y-4 text-xs">
+            <div>
+              <label className="font-bold text-theme-text block mb-1">
+                Diskon Platform / Admin (Rupiah)
+              </label>
+              <input
+                type="number"
+                step="50000"
+                min="0"
+                value={adminDiscountInput}
+                onChange={(e) => setAdminDiscountInput(e.target.value)}
+                placeholder="0"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-theme-text block mb-1">
+                Diskon Toko / Peternak (Rupiah)
+              </label>
+              <input
+                type="number"
+                step="50000"
+                min="0"
+                value={storeDiscountInput}
+                onChange={(e) => setStoreDiscountInput(e.target.value)}
+                placeholder="0"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text focus:outline-none focus:border-theme-primary font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-theme-text block mb-1">
+                Kode Kupon Voucher (Opsional)
+              </label>
+              <input
+                type="text"
+                value={voucherCodeInput}
+                onChange={(e) => setVoucherCodeInput(e.target.value.toUpperCase())}
+                placeholder="Contoh: QURBANBERKAH"
+                className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text uppercase font-mono focus:outline-none focus:border-theme-primary"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-theme-text block mb-1">
+                Catatan Pemberian Promo
+              </label>
+              <textarea
+                rows={3}
+                value={promoNotes}
+                onChange={(e) => setPromoNotes(e.target.value)}
+                placeholder="Promo khusus pembelian pertama / negosiasi langsung..."
+                className="w-full bg-theme-bg border border-theme-border rounded-xl p-3 text-xs text-theme-text focus:outline-none focus:border-theme-primary resize-none"
+              />
+            </div>
+
+            <div className="pt-4 border-t border-theme-border flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setPromoModalOrder(null)}
+                className="px-4 py-2.5 rounded-xl bg-theme-bg hover:bg-theme-card border border-theme-border text-theme-muted hover:text-theme-text text-xs font-bold transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={savingPromo}
+                className="px-6 py-2.5 rounded-xl bg-theme-primary hover:bg-theme-primary-hover disabled:opacity-50 text-white text-xs font-extrabold shadow-sm transition-all"
+              >
+                {savingPromo ? 'Menyimpan...' : 'Terapkan Promo'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-theme-border pb-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <Package className="w-6 h-6 text-emerald-400" />
-            <span>Manajemen & CRUD Pesanan (DataTable)</span>
+          <h1 className="text-xl sm:text-2xl font-black text-theme-text tracking-tight flex items-center gap-2">
+            <Package className="w-6 h-6 text-theme-primary" />
+            <span>Kelola Pesanan Pelanggan</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-theme-muted mt-1">
             Pantau transaksi ternak, atur promo/diskon per order, verifikasi bukti bayar, dan kendalikan status pengiriman.
           </p>
         </div>
 
         <button
           onClick={fetchOrders}
-          className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-2 transition-colors self-start sm:self-auto"
+          className="px-3.5 py-2 rounded-xl bg-theme-card hover:bg-theme-bg border border-theme-border text-theme-text text-xs font-bold flex items-center gap-2 transition-colors self-start sm:self-auto shadow-sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Refresh Data</span>
@@ -296,7 +414,7 @@ export default function AdminOrdersPage() {
 
       {/* Success Notification */}
       {successMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
@@ -326,8 +444,8 @@ export default function AdminOrdersPage() {
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${
                   statusFilter === tab.id
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
+                    ? 'bg-theme-primary text-white shadow-sm'
+                    : 'bg-theme-card border border-theme-border text-theme-muted hover:text-theme-text'
                 }`}
               >
                 {tab.label}
@@ -339,18 +457,18 @@ export default function AdminOrdersPage() {
 
       {/* Proof Viewer Modal */}
       {selectedProof && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="font-extrabold text-sm text-white">Bukti Transfer Pembayaran</span>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-theme-card border border-theme-border rounded-3xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-theme-border pb-3">
+              <span className="font-extrabold text-sm text-theme-text">Bukti Transfer Pembayaran</span>
               <button
                 onClick={() => setSelectedProof(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white"
+                className="p-1 rounded-lg text-theme-muted hover:text-theme-text"
               >
                 ✕
               </button>
             </div>
-            <div className="rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center max-h-[70vh]">
+            <div className="rounded-2xl overflow-hidden bg-theme-bg flex items-center justify-center max-h-[70vh]">
               <img
                 src={selectedProof}
                 alt="Bukti Transfer"
@@ -365,121 +483,6 @@ export default function AdminOrdersPage() {
                 Tutup
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Per-Order Promo Customization Modal */}
-      {promoModalOrder && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-amber-400" />
-                  <span>Atur Promo Khusus Pesanan</span>
-                </h2>
-                <span className="text-[11px] font-mono text-slate-400">
-                  Invoice: #{promoModalOrder.invoice_number}
-                </span>
-              </div>
-              <button
-                onClick={() => setPromoModalOrder(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-1">
-              <div className="flex justify-between text-slate-400">
-                <span>Harga Dasar Hewan:</span>
-                <span className="font-bold text-white">{formatRupiah(promoModalOrder.base_price)}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Ongkos Kirim:</span>
-                <span className="text-white">{formatRupiah(promoModalOrder.shipping_fee)}</span>
-              </div>
-              <div className="flex justify-between text-slate-400">
-                <span>Biaya Layanan:</span>
-                <span className="text-white">{formatRupiah(promoModalOrder.service_fee)}</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSavePromoOrder} className="space-y-4 text-xs">
-              <div>
-                <label className="font-bold text-slate-300 block mb-1">
-                  Diskon Platform / Admin (Rupiah)
-                </label>
-                <input
-                  type="number"
-                  step="50000"
-                  min="0"
-                  value={adminDiscountInput}
-                  onChange={(e) => setAdminDiscountInput(e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-300 block mb-1">
-                  Diskon Toko / Peternak (Rupiah)
-                </label>
-                <input
-                  type="number"
-                  step="50000"
-                  min="0"
-                  value={storeDiscountInput}
-                  onChange={(e) => setStoreDiscountInput(e.target.value)}
-                  placeholder="0"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-bold"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-300 block mb-1">
-                  Kode Kupon Voucher (Opsional)
-                </label>
-                <input
-                  type="text"
-                  value={voucherCodeInput}
-                  onChange={(e) => setVoucherCodeInput(e.target.value.toUpperCase())}
-                  placeholder="Contoh: QURBANBERKAH"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white uppercase font-mono focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-slate-300 block mb-1">
-                  Catatan Pemberian Promo
-                </label>
-                <textarea
-                  rows={2}
-                  value={promoNotes}
-                  onChange={(e) => setPromoNotes(e.target.value)}
-                  placeholder="Promo khusus pembelian pertama / negosiasi langsung..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setPromoModalOrder(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingPromo}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-extrabold shadow-lg"
-                >
-                  {savingPromo ? 'Menyimpan...' : 'Terapkan Promo'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

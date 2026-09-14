@@ -31,10 +31,16 @@ export default function LiveTrackingMap({
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
+    const safeCoord = (val, fallback = 0) => {
+      if (val === null || val === undefined) return fallback;
+      const num = typeof val === 'number' ? val : parseFloat(val);
+      return isNaN(num) ? fallback : num;
+    };
+
     // Center point fallback
     const defaultCenter = courierPos?.lat
-      ? [courierPos.lat, courierPos.lng]
-      : [origin?.lat || -6.2088, origin?.lng || 106.8456];
+      ? [safeCoord(courierPos.lat), safeCoord(courierPos.lng)]
+      : [safeCoord(origin?.lat, -6.2088), safeCoord(origin?.lng, 106.8456)];
 
     // Initialize Map if not already created
     if (!mapInstanceRef.current) {
@@ -114,33 +120,41 @@ export default function LiveTrackingMap({
 
     // 1. Add Origin Marker
     if (origin && origin.lat && origin.lng) {
-      const originMarker = L.marker([origin.lat, origin.lng], { icon: farmIcon })
+      const oLat = safeCoord(origin.lat);
+      const oLng = safeCoord(origin.lng);
+      L.marker([oLat, oLng], { icon: farmIcon })
         .bindPopup(`<b>Kandang Asal:</b><br/>${origin.name || 'Peternakan'}`)
         .addTo(group);
-      bounds.push([origin.lat, origin.lng]);
+      bounds.push([oLat, oLng]);
     }
 
     // 2. Add Destination Marker
     if (destination && destination.lat && destination.lng) {
-      const destMarker = L.marker([destination.lat, destination.lng], { icon: destIcon })
+      const dLat = safeCoord(destination.lat);
+      const dLng = safeCoord(destination.lng);
+      L.marker([dLat, dLng], { icon: destIcon })
         .bindPopup(`<b>Alamat Pembeli:</b><br/>${destination.name || 'Lokasi Tujuan'}`)
         .addTo(group);
-      bounds.push([destination.lat, destination.lng]);
+      bounds.push([dLat, dLng]);
     }
 
     // 3. Add Courier Truck Position
     if (courierPos && courierPos.lat && courierPos.lng) {
-      const courierMarker = L.marker([courierPos.lat, courierPos.lng], { icon: truckIcon })
+      const cLat = safeCoord(courierPos.lat);
+      const cLng = safeCoord(courierPos.lng);
+      L.marker([cLat, cLng], { icon: truckIcon })
         .bindPopup(`<b>Armada Khusus Ternak:</b><br/>Driver: ${courierPos.driverName || 'Kurir'}<br/>Nopol: ${courierPos.vehiclePlate || '-'}`)
         .addTo(group);
-      bounds.push([courierPos.lat, courierPos.lng]);
+      bounds.push([cLat, cLng]);
     }
 
     // 4. Add Checkpoint Markers
     if (Array.isArray(checkpoints)) {
       checkpoints.forEach((cp) => {
         if (cp.latitude && cp.longitude) {
-          L.marker([cp.latitude, cp.longitude], { icon: cp.is_rest_stop ? restStopIcon : farmIcon })
+          const cpLat = safeCoord(cp.latitude);
+          const cpLng = safeCoord(cp.longitude);
+          L.marker([cpLat, cpLng], { icon: cp.is_rest_stop ? restStopIcon : farmIcon })
             .bindPopup(`<b>${cp.status_label}</b><br/>${cp.notes || ''}`)
             .addTo(group);
         }
@@ -149,14 +163,14 @@ export default function LiveTrackingMap({
 
     // 5. Draw Route Line
     const linePoints = [];
-    if (origin?.lat && origin?.lng) linePoints.push([origin.lat, origin.lng]);
+    if (origin?.lat && origin?.lng) linePoints.push([safeCoord(origin.lat), safeCoord(origin.lng)]);
     if (checkpoints && checkpoints.length > 0) {
       checkpoints.forEach(cp => {
-        if (cp.latitude && cp.longitude) linePoints.push([cp.latitude, cp.longitude]);
+        if (cp.latitude && cp.longitude) linePoints.push([safeCoord(cp.latitude), safeCoord(cp.longitude)]);
       });
     }
-    if (courierPos?.lat && courierPos?.lng) linePoints.push([courierPos.lat, courierPos.lng]);
-    if (destination?.lat && destination?.lng) linePoints.push([destination.lat, destination.lng]);
+    if (courierPos?.lat && courierPos?.lng) linePoints.push([safeCoord(courierPos.lat), safeCoord(courierPos.lng)]);
+    if (destination?.lat && destination?.lng) linePoints.push([safeCoord(destination.lat), safeCoord(destination.lng)]);
 
     if (linePoints.length >= 2) {
       L.polyline(linePoints, {

@@ -48,16 +48,20 @@ exports.registerStore = async (req, res) => {
       latitude,
       longitude,
       farm_photo_url,
+      logo_url,
+      banner_url,
+      whatsapp_number,
+      pickup_address_id,
       nib_sku_number,
       bank_name,
       bank_account_number,
       bank_account_holder
     } = req.body;
 
-    if (!store_name || !farm_address || !bank_name || !bank_account_number) {
+    if (!store_name) {
       return res.status(400).json({
         success: false,
-        message: 'Harap lengkapi nama toko/kandang, alamat peternakan, dan rekening bank penampung.'
+        message: 'Nama toko/kandang wajib diisi.'
       });
     }
 
@@ -66,7 +70,7 @@ exports.registerStore = async (req, res) => {
     if (existing.length > 0) {
       return res.status(400).json({
         success: false,
-        message: 'Akun Anda telah memiliki kandang peternakan terdaftar.'
+        message: 'Akun Anda telah memiliki toko/kandang terdaftar.'
       });
     }
 
@@ -77,41 +81,59 @@ exports.registerStore = async (req, res) => {
       finalSlug = `${baseSlug}-${count++}`;
     }
 
+    // If pickup_address_id is provided, resolve coordinates and address from user_addresses
+    let finalAddress = farm_address || req.user.address || 'Alamat Belum Diatur';
+    let finalLat = latitude ? parseFloat(latitude) : (req.user.latitude || -6.595);
+    let finalLng = longitude ? parseFloat(longitude) : (req.user.longitude || 106.816);
+
+    if (pickup_address_id) {
+      const addr = await db.findById('user_addresses', pickup_address_id);
+      if (addr) {
+        finalAddress = addr.full_address;
+        finalLat = parseFloat(addr.latitude);
+        finalLng = parseFloat(addr.longitude);
+      }
+    }
+
     const newStore = await db.create('stores', {
       user_id: req.user.id,
       store_name,
       store_slug: finalSlug,
+      slug: finalSlug,
       description: description || '',
-      farm_address,
-      latitude: latitude ? parseFloat(latitude) : -6.595,
-      longitude: longitude ? parseFloat(longitude) : 106.816,
+      farm_address: finalAddress,
+      latitude: finalLat,
+      longitude: finalLng,
+      pickup_address_id: pickup_address_id || null,
+      whatsapp_number: whatsapp_number || req.user.phone_number,
+      logo_url: logo_url || '',
+      banner_url: banner_url || '',
       farm_photo_url: farm_photo_url || 'https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=800&auto=format&fit=crop&q=80',
       nib_sku_number: nib_sku_number || '',
-      bank_name,
-      bank_account_number,
+      bank_name: bank_name || 'BCA',
+      bank_account_number: bank_account_number || '-',
       bank_account_holder: bank_account_holder || req.user.name,
       tier: 'BRONZE',
-      status: 'PENDING', // Awaiting Admin Approval
-      rating_average: 0.0,
+      status: 'PENDING', // Menunggu verifikasi admin
+      is_verified: false,
+      rating_average: 5.0,
       total_reviews: 0
     });
 
-    // Update user role to SELLER if not yet
-    if (req.user.role !== 'SELLER' && req.user.role !== 'ADMIN') {
-      await db.update('users', req.user.id, { role: 'SELLER' });
-    }
+    // Mark user as having a registered store (pending review)
+    await db.update('users', req.user.id, { has_store: true });
 
     // Notify admins
     notificationService.send('usr_admin_001', {
-      title: '📋 Pendaftaran Toko Kandang Baru',
-      message: `Toko kandang '${store_name}' mendaftar dan menunggu verifikasi legalitas NIB.`,
+      title: '🏪 Toko Kandang Baru Terbuka',
+      message: `Toko kandang '${store_name}' resmi dibuka oleh ${req.user.name}.`,
       type: 'STORE_REGISTRATION',
       reference_id: newStore.id
     });
 
     return res.status(201).json({
       success: true,
-      message: 'Pendaftaran toko kandang berhasil diajukan! Menunggu verifikasi tim Admin Ternakmart.',
+      message: 'Selamat! Toko kandang Anda resmi dibuka.',
       data: newStore
     });
   } catch (err) {
@@ -177,11 +199,13 @@ exports.updateStoreStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Toko tidak ditemukan.' });
     }
 
-    const updated = await db.update('stores', storeId, { status });
+    const isVerified = status === 'ACTIVE';
+    const updated = await db.update('stores', storeId, { status, is_verified: isVerified });
 
-    // Recalculate tier upon activation
+    // Recalculate tier upon activation and grant SELLER role to user
     if (status === 'ACTIVE') {
       await computeStoreTier(storeId);
+      await db.update('users', store.user_id, { role: 'SELLER', has_store: true });
     }
 
     // Notify store owner

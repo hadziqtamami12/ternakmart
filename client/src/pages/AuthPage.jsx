@@ -6,7 +6,7 @@ import { useAppConfig } from '../context/AppConfigContext';
 
 export default function AuthPage({ onNavigate, redirectPage, redirectParams }) {
   const { config, setDocumentTitle } = useAppConfig();
-  const { login, register } = useAuth();
+  const { login, register, logout } = useAuth();
 
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [loading, setLoading] = useState(false);
@@ -25,8 +25,6 @@ export default function AuthPage({ onNavigate, redirectPage, redirectParams }) {
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regAddress, setRegAddress] = useState('');
-  const [regLat, setRegLat] = useState(-6.2088);
-  const [regLng, setRegLng] = useState(106.8456);
   const [regRole, setRegRole] = useState('BUYER');
 
   React.useEffect(() => {
@@ -52,6 +50,11 @@ export default function AuthPage({ onNavigate, redirectPage, redirectParams }) {
     try {
       const res = await login(identifier, password);
       if (res.success) {
+        if (res.data?.user?.role === 'ADMIN') {
+          logout();
+          setError('Akun Administrator tidak diizinkan masuk melalui halaman customer. Silakan gunakan portal khusus Backoffice di /admin.');
+          return;
+        }
         handleSuccessRedirect();
       }
     } catch (err) {
@@ -73,8 +76,6 @@ export default function AuthPage({ onNavigate, redirectPage, redirectParams }) {
         phone_number: regPhone,
         password: regPassword,
         address: regAddress,
-        latitude: regLat,
-        longitude: regLng,
         role: regRole
       });
       if (res.success) {
@@ -95,6 +96,11 @@ export default function AuthPage({ onNavigate, redirectPage, redirectParams }) {
     try {
       const res = await login(demoIdentifier, demoPass);
       if (res.success) {
+        if (res.data?.user?.role === 'ADMIN') {
+          logout();
+          setError('Akun Administrator tidak diizinkan masuk melalui portal customer. Silakan gunakan /admin.');
+          return;
+        }
         handleSuccessRedirect();
       }
     } catch (err) {
@@ -350,29 +356,9 @@ export default function AuthPage({ onNavigate, redirectPage, redirectParams }) {
                   onChange={(e) => setRegAddress(e.target.value)}
                   className="w-full bg-theme-bg border border-theme-border rounded-xl p-2.5 text-xs text-theme-text"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-theme-muted block font-semibold">Latitude Pinpoint Peta</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={regLat}
-                    onChange={(e) => setRegLat(parseFloat(e.target.value))}
-                    className="w-full bg-theme-bg border border-theme-border rounded-xl px-3 py-1.5 text-xs text-theme-text"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] text-theme-muted block font-semibold">Longitude Pinpoint Peta</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    value={regLng}
-                    onChange={(e) => setRegLng(parseFloat(e.target.value))}
-                    className="w-full bg-theme-bg border border-theme-border rounded-xl px-3 py-1.5 text-xs text-theme-text"
-                  />
-                </div>
+                <p className="text-[10px] text-theme-muted mt-1">
+                  💡 Titik peta / GPS dapat diaktifkan otomatis dengan 1 klik setelah masuk akun.
+                </p>
               </div>
 
               <button

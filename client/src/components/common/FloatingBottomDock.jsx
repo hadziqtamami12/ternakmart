@@ -1,105 +1,164 @@
-import React from 'react';
-import { Home, Compass, MessageCircle, Package, User, Store, Flame } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, Compass, ShoppingBag, MessageCircle, User, Store } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 
-export default function FloatingBottomDock({ currentPage, onNavigate, activeOrdersCount = 1 }) {
-  const { isAuthenticated, isSeller } = useAuth();
+function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'primary' }) {
+  const isAmber = activeColor === 'amber';
+  
+  // High-contrast vibrant styling for active tabs
+  const activeIconWrapper = isAmber
+    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-400/30 -translate-y-1 scale-105'
+    : 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/30 -translate-y-1 scale-105';
+  
+  const activeText = isAmber
+    ? 'text-amber-600 dark:text-amber-400 font-black scale-105'
+    : 'text-emerald-600 dark:text-emerald-400 font-black scale-105';
+    
+  const activePill = isAmber ? 'bg-amber-500' : 'bg-emerald-600 dark:bg-emerald-400';
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[1100] bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.15)]">
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center justify-center flex-1 py-1 rounded-2xl transition-all duration-200 group focus:outline-none"
+    >
+      <div
+        className={`relative p-2 rounded-2xl transition-all duration-300 ${
+          isActive
+            ? activeIconWrapper
+            : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 group-hover:bg-slate-100 dark:group-hover:bg-slate-800/50'
+        }`}
+      >
+        <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+        {badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-sm animate-in zoom-in">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </div>
+      <span
+        className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
+          isActive ? activeText : 'text-slate-400 dark:text-slate-500 font-semibold'
+        }`}
+      >
+        {label}
+      </span>
+      {isActive ? (
+        <span className={`w-4 h-1 rounded-full ${activePill} mt-0.5 shadow-sm animate-in zoom-in duration-200`} />
+      ) : (
+        <span className="w-4 h-1 rounded-full bg-transparent mt-0.5" />
+      )}
+    </button>
+  );
+}
+
+export default function FloatingBottomDock({ currentPage, onNavigate }) {
+  const { isAuthenticated, isSeller, user } = useAuth();
+  const cartCtx = useCart();
+  const cartCount = cartCtx?.count || 0;
+
+  // On home page, bottom nav is hidden at top and slides up when scrolling down.
+  // On all other pages (cart, catalog, chat, profile, etc.), it stays permanently visible.
+  const [isVisible, setIsVisible] = useState(currentPage !== 'home');
+
+  useEffect(() => {
+    if (currentPage !== 'home') {
+      setIsVisible(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      setIsVisible(window.scrollY > 40);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage]);
+
+  // Map subpages to their parent bottom navigation tab
+  const isHomeActive = currentPage === 'home';
+  const isCatalogActive = currentPage === 'catalog' || currentPage === 'animal-detail';
+  const isCartActive = currentPage === 'cart' || currentPage === 'checkout';
+  const isChatActive = currentPage === 'chat';
+  const isSellerActive = currentPage === 'seller-dashboard' || currentPage === 'manage-livestock';
+  const isProfileActive =
+    currentPage === 'profile' ||
+    currentPage === 'orders' ||
+    currentPage === 'tracking' ||
+    currentPage === 'auth' ||
+    currentPage === 'register-store';
+
+  return (
+    <div
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-[1100] bg-white dark:bg-slate-900 border-t border-theme-border shadow-[0_-4px_25px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
+      }`}
+      style={{ backgroundColor: 'var(--color-card, #ffffff)' }}
+    >
       <nav
-        className="px-4 py-1.5 flex items-center justify-between max-w-lg mx-auto"
+        className="px-2 py-1 flex items-center justify-around max-w-lg mx-auto bg-transparent"
         aria-label="Navigasi Utama Mobile"
       >
-        {/* 1. Home */}
-        <button
+        {/* 1. Beranda */}
+        <NavItem
+          icon={Home}
+          label="Beranda"
+          isActive={isHomeActive}
           onClick={() => onNavigate('home')}
-          className={`flex flex-col items-center justify-center w-14 py-1 rounded-2xl transition-all ${
-            currentPage === 'home' ? 'text-theme-primary font-bold' : 'text-theme-muted hover:text-theme-text'
-          }`}
-        >
-          <Home className={`w-5 h-5 ${currentPage === 'home' ? 'scale-110 text-theme-primary' : ''}`} />
-          <span className="text-[10px] mt-1 font-medium">Beranda</span>
-        </button>
+        />
 
-        {/* 2. Katalog */}
-        <button
+        {/* 2. Kategori / Eksplor */}
+        <NavItem
+          icon={Compass}
+          label="Kategori"
+          isActive={isCatalogActive}
           onClick={() => onNavigate('catalog')}
-          className={`flex flex-col items-center justify-center w-14 py-1 rounded-2xl transition-all ${
-            currentPage === 'catalog' ? 'text-theme-primary font-bold' : 'text-theme-muted hover:text-theme-text'
-          }`}
-        >
-          <Compass className={`w-5 h-5 ${currentPage === 'catalog' ? 'scale-110 text-theme-primary' : ''}`} />
-          <span className="text-[10px] mt-1 font-medium">Katalog</span>
-        </button>
+        />
 
-        {/* 3. Elevated Center Action Button (Chat / Tawar Instan) */}
-        <div className="relative -mt-5 flex flex-col items-center">
-          <button
-            onClick={() => onNavigate('chat')}
-            aria-label="Chat dan Tawar Ternak Instan"
-            className="w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-lg shadow-emerald-600/30 active:scale-95 transition-transform flex items-center justify-center border-2 border-white dark:border-slate-800"
-          >
-            <MessageCircle className="w-5 h-5 text-white" />
-          </button>
-          <span className="text-[9px] font-bold text-theme-primary mt-0.5 tracking-tight">
-            Tawar
-          </span>
-        </div>
+        {/* 3. Keranjang with Badge */}
+        <NavItem
+          icon={ShoppingBag}
+          label="Keranjang"
+          isActive={isCartActive}
+          badge={cartCount}
+          onClick={() => onNavigate('cart')}
+        />
 
-        {/* 4. Promo (if not logged in) or Pesanan (if logged in) */}
-        {!isAuthenticated ? (
-          <button
-            onClick={() => onNavigate('catalog', { category: 'HEMAT' })}
-            className={`relative flex flex-col items-center justify-center w-14 py-1 rounded-2xl transition-all ${
-              currentPage === 'catalog' ? 'text-amber-500 font-bold' : 'text-theme-muted hover:text-theme-text'
-            }`}
-          >
-            <Flame className="w-5 h-5 text-amber-500" />
-            <span className="text-[10px] mt-1 font-medium text-amber-600 dark:text-amber-400">Promo</span>
-          </button>
-        ) : (
-          <button
-            onClick={() => onNavigate('orders')}
-            className={`relative flex flex-col items-center justify-center w-14 py-1 rounded-2xl transition-all ${
-              currentPage === 'orders' ? 'text-theme-primary font-bold' : 'text-theme-muted hover:text-theme-text'
-            }`}
-          >
-            <div className="relative">
-              <Package className={`w-5 h-5 ${currentPage === 'orders' ? 'scale-110 text-theme-primary' : ''}`} />
-              {activeOrdersCount > 0 && (
-                <span className="absolute -top-1 -right-2 bg-emerald-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-theme-card">
-                  {activeOrdersCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] mt-1 font-medium">Pesanan</span>
-          </button>
-        )}
+        {/* 4. Chat (Auth-Gated) */}
+        <NavItem
+          icon={MessageCircle}
+          label="Chat"
+          isActive={isChatActive}
+          onClick={() => {
+            if (!isAuthenticated) {
+              onNavigate('auth', { redirect: 'chat' });
+            } else {
+              onNavigate('chat');
+            }
+          }}
+        />
 
-        {/* 5. Akun / Toko Saya (Seller Differentiation) */}
-        {isAuthenticated && isSeller ? (
-          <button
+        {/* 5. Toko (Jika Mitra Peternak) atau Akun / Masuk */}
+        {isAuthenticated && isSeller && user?.store?.is_verified ? (
+          <NavItem
+            icon={Store}
+            label="Toko"
+            isActive={isSellerActive}
+            activeColor="amber"
             onClick={() => onNavigate('seller-dashboard')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-2xl transition-all ${
-              currentPage === 'seller-dashboard' ? 'text-amber-500 font-bold' : 'text-theme-muted hover:text-theme-text'
-            }`}
-          >
-            <Store className={`w-5 h-5 ${currentPage === 'seller-dashboard' ? 'scale-110 text-amber-500' : ''}`} />
-            <span className="text-[10px] mt-1 font-medium text-amber-600 dark:text-amber-400">Toko</span>
-          </button>
+          />
         ) : (
-          <button
+          <NavItem
+            icon={User}
+            label={isAuthenticated ? 'Akun' : 'Masuk'}
+            isActive={isProfileActive}
             onClick={() => onNavigate(isAuthenticated ? 'profile' : 'auth')}
-            className={`flex flex-col items-center justify-center w-14 py-1 rounded-2xl transition-all ${
-              currentPage === 'profile' || currentPage === 'auth' ? 'text-theme-primary font-bold' : 'text-theme-muted hover:text-theme-text'
-            }`}
-          >
-            <User className={`w-5 h-5 ${currentPage === 'profile' ? 'scale-110 text-theme-primary' : ''}`} />
-            <span className="text-[10px] mt-1 font-medium">{isAuthenticated ? 'Akun' : 'Masuk'}</span>
-          </button>
+          />
         )}
       </nav>
     </div>
   );
 }
+
