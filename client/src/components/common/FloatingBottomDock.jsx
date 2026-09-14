@@ -6,16 +6,16 @@ import { useCart } from '../../context/CartContext';
 function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'primary' }) {
   const isAmber = activeColor === 'amber';
   
-  // High-contrast vibrant styling for active tabs
+  // High-contrast vibrant styling dynamically adapted to the active marketplace theme
   const activeIconWrapper = isAmber
     ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-400/30 -translate-y-1 scale-105'
-    : 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400/30 -translate-y-1 scale-105';
+    : 'bg-theme-primary text-theme-primary-contrast shadow-lg shadow-theme-primary/30 ring-2 ring-theme-primary/30 -translate-y-1 scale-105';
   
   const activeText = isAmber
     ? 'text-amber-600 dark:text-amber-400 font-black scale-105'
-    : 'text-emerald-600 dark:text-emerald-400 font-black scale-105';
+    : 'text-theme-primary font-black scale-105';
     
-  const activePill = isAmber ? 'bg-amber-500' : 'bg-emerald-600 dark:bg-emerald-400';
+  const activePill = isAmber ? 'bg-amber-500' : 'bg-theme-primary';
 
   return (
     <button
@@ -27,19 +27,19 @@ function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'p
         className={`relative p-2 rounded-2xl transition-all duration-300 ${
           isActive
             ? activeIconWrapper
-            : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 group-hover:bg-slate-100 dark:group-hover:bg-slate-800/50'
+            : 'text-theme-muted/70 hover:text-theme-text group-hover:bg-theme-bg/60'
         }`}
       >
         <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
         {badge > 0 && (
-          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900 shadow-sm animate-in zoom-in">
+          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-theme-card shadow-sm animate-in zoom-in">
             {badge > 99 ? '99+' : badge}
           </span>
         )}
       </div>
       <span
         className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
-          isActive ? activeText : 'text-slate-400 dark:text-slate-500 font-semibold'
+          isActive ? activeText : 'text-theme-muted/80 font-semibold'
         }`}
       >
         {label}
@@ -92,13 +92,12 @@ export default function FloatingBottomDock({ currentPage, onNavigate }) {
 
   return (
     <div
-      className={`lg:hidden fixed bottom-0 left-0 right-0 z-[1100] bg-white dark:bg-slate-900 border-t border-theme-border shadow-[0_-4px_25px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out ${
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-[1100] bg-theme-card/95 backdrop-blur-xl border-t border-theme-border shadow-dock transition-all duration-300 ease-in-out ${
         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
       }`}
-      style={{ backgroundColor: 'var(--color-card, #ffffff)' }}
     >
       <nav
-        className="px-2 py-1 flex items-center justify-around max-w-lg mx-auto bg-transparent"
+        className="px-2 py-1 flex items-center justify-around max-w-lg mx-auto bg-transparent safe-area-bottom"
         aria-label="Navigasi Utama Mobile"
       >
         {/* 1. Beranda */}
