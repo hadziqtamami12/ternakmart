@@ -9,7 +9,7 @@ export function AppConfigProvider({ children }) {
     app_name: 'Ternakmart',
     tagline: 'Platform E-Commerce Peternakan & Logistik Armada Mandiri Terpercaya',
     app_logo_url: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=128&auto=format&fit=crop&q=80',
-    app_favicon_url: '/logo.svg',
+    app_favicon_url: '/favicon.ico',
     active_theme: 'emerald-agro',
     timezone_offset: 'Asia/Jakarta',
     timezone_label: 'WIB (UTC+7)',
