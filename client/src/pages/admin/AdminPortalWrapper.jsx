@@ -5,7 +5,7 @@ import {
   Store, Package, Activity, Menu, X, LogOut, AlertCircle,
   Eye, EyeOff, Sparkles, Users, Palette, ChevronLeft,
   ChevronRight, Bell, Search, ExternalLink, LayoutDashboard,
-  Zap, Award, Truck, Percent
+  Zap, Award, Truck, Percent, CheckCircle2, Shield, FileCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppConfig } from '../../context/AppConfigContext';
@@ -101,13 +101,27 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
   useEffect(() => { setDocumentTitle('Super Admin'); }, []);
 
   /* ── Auth handlers ── */
+  const handleAdminLogout = () => {
+    logout();
+    if (window.location.pathname.toLowerCase() !== '/admin') {
+      window.history.pushState({}, '', '/admin');
+    }
+    setActiveTab('dashboard');
+  };
+
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setLoading(true); setError('');
     try {
       const res = await login(username, password);
       if (res.success && res.data.user.role !== 'ADMIN') {
-        setError('Akses ditolak. Akun ini bukan Super Admin.'); logout();
+        setError('Akses ditolak. Akun ini bukan Super Admin.');
+        logout();
+      } else if (res.success) {
+        if (window.location.pathname.toLowerCase() !== '/admin') {
+          window.history.pushState({}, '', '/admin');
+        }
+        setActiveTab('dashboard');
       }
     } catch (err) { setError(err.message || 'Kredensial tidak valid.'); }
     finally { setLoading(false); }
@@ -118,10 +132,21 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
     try {
       const res = await login('admin', 'Password123!');
       if (res.success && res.data.user.role !== 'ADMIN') {
-        setError('Akses ditolak.'); logout();
+        setError('Akses ditolak.');
+        logout();
+      } else if (res.success) {
+        if (window.location.pathname.toLowerCase() !== '/admin') {
+          window.history.pushState({}, '', '/admin');
+        }
+        setActiveTab('dashboard');
       }
     } catch (err) { setError(err.message || 'Login demo gagal.'); }
     finally { setLoading(false); }
+  };
+
+  const handleFillCredentials = (u, p) => {
+    setUsername(u);
+    setPassword(p);
   };
 
   const handleNextTheme = () => {
@@ -129,91 +154,259 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
     switchTheme(availableThemes[(idx + 1) % availableThemes.length].id);
   };
 
-  /* ────────────────────── LOGIN GATE ──────────────────────────── */
+  /* ────────────────────── LIVESTOCK THEMED LOGIN GATE ──────────────────────────── */
   if (!isAuthenticated || !isAdmin) {
     return (
-      <div className="min-h-screen bg-[#060b14] text-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen bg-[#040e09] text-slate-100 flex items-center justify-center p-3 sm:p-6 lg:p-10 relative overflow-hidden font-sans">
         {/* Ambient background glows */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-emerald-600/8 blur-[120px]" />
-          <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-violet-600/8 blur-[120px]" />
+          <div className="absolute top-[-15%] left-[-10%] w-[700px] h-[700px] rounded-full bg-emerald-500/10 blur-[140px]" />
+          <div className="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] rounded-full bg-amber-500/10 blur-[140px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-teal-600/5 blur-[160px]" />
         </div>
 
-        <div className="relative w-full max-w-sm">
-          {/* Card */}
-          <div className="bg-slate-900/90 border border-slate-700/60 rounded-3xl p-8 shadow-2xl backdrop-blur-xl space-y-6">
-            {/* Logo */}
-            <div className="text-center space-y-3">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
-                <ShieldCheck className="w-8 h-8 text-emerald-400" />
-              </div>
-              <div>
-                <h1 className="text-xl font-black text-white tracking-tight">Super Admin Panel</h1>
-                <p className="text-xs text-slate-500 mt-1">{config.app_name} · Akses Terbatas</p>
+        {/* Main Portal Card */}
+        <div className="relative w-full max-w-5xl bg-slate-900/90 border border-emerald-500/30 rounded-3xl sm:rounded-[32px] shadow-2xl shadow-emerald-950/60 overflow-hidden backdrop-blur-2xl flex flex-col lg:flex-row">
+          
+          {/* Left Hero Livestock Showcase (Desktop) */}
+          <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-10 overflow-hidden border-r border-emerald-500/20">
+            {/* Background Livestock Pastoral Image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
+              style={{
+                backgroundImage: `url('https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=1600&auto=format&fit=crop&q=85')`
+              }}
+            />
+            {/* Gradient Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#040e09] via-[#040e09]/85 to-[#040e09]/75 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/40 via-transparent to-[#040e09]/90" />
+
+            {/* Top Brand Pill */}
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-black/60 border border-emerald-500/40 backdrop-blur-md shadow-lg">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400" />
+                <span className="text-[11px] font-black tracking-widest text-emerald-300 uppercase">
+                  Ternakmart Live Operations
+                </span>
               </div>
             </div>
 
-            {/* 1-Click demo */}
-            <button
-              onClick={handleDemoLogin}
-              disabled={loading}
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-extrabold text-xs transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              {loading ? 'Mengautentikasi...' : '1-Click Masuk sebagai Super Admin'}
-            </button>
-            <p className="text-[10px] text-slate-600 text-center -mt-3">
-              demo: <span className="text-slate-400 font-mono">admin</span> / <span className="text-slate-400 font-mono">Password123!</span>
-            </p>
+            {/* Center Content */}
+            <div className="relative z-10 my-auto py-8 space-y-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-2xl shadow-xl shadow-emerald-600/30 border border-emerald-400/40">
+                    🐂
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-white tracking-tight leading-none">
+                      {config.app_name || 'Ternakmart'}
+                    </h2>
+                    <p className="text-xs font-extrabold text-emerald-400 font-mono tracking-wider mt-1 uppercase">
+                      Pusat Komando Pasar Ternak
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-sm text-slate-300 leading-relaxed max-w-md">
+                  Panel manajemen terpadu ekosistem perdagangan hewan ternak, logistik armada berstandar veteriner, dan verifikasi SKKH digital Indonesia.
+                </p>
+              </div>
+
+              {/* Livestock Pillars */}
+              <div className="space-y-2.5 pt-2">
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <div className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 flex-shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Validasi Kesehatan & SKKH</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Pengawasan rekam medis hewan, riwayat vaksin, dan sertifikasi bebas PMK.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 flex-shrink-0 mt-0.5">
+                    <Truck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Logistik Armada Mandiri</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Monitoring checkpoint rest-stop pakan dan pengiriman hewan hidup.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <div className="p-1.5 rounded-xl bg-teal-500/20 text-teal-400 flex-shrink-0 mt-0.5">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white">Rekonsiliasi Escrow & Peternak</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Pengendalian transaksi aman, kupon qurban, dan verifikasi mitra peternakan.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Security Footer */}
+            <div className="relative z-10 flex items-center justify-between text-[11px] text-slate-400 pt-4 border-t border-white/10">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                Protokol TLS 1.3 · Akses Terisolasi
+              </span>
+              <span className="font-mono text-[10px] text-emerald-500 font-bold">v1.0.0-PROD</span>
+            </div>
+          </div>
+
+          {/* Right Form Card */}
+          <div className="w-full lg:w-1/2 p-6 sm:p-10 lg:p-12 flex flex-col justify-center space-y-6 relative bg-slate-900/95">
+            {/* Header / Brand */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 flex items-center justify-center shadow-lg shadow-emerald-500/10 text-2xl">
+                  🐂
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Super Admin Portal</h1>
+                  <p className="text-xs text-emerald-400 font-bold">Otoritas Pusat Operasional Ternakmart</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 pt-1">
+                Silakan masuk dengan kredensial administrator untuk mengelola seluruh data platform.
+              </p>
+            </div>
+
+            {/* 1-Click Fast Admin Access */}
+            <div className="space-y-2.5 p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/30">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> Akses Cepat Super Admin
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">1-Klik Siap Masuk</span>
+              </div>
+
+              <button
+                onClick={handleDemoLogin}
+                disabled={loading}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 disabled:opacity-60 transform active:scale-[0.99] cursor-pointer"
+              >
+                <Zap className="w-4 h-4 fill-white" />
+                {loading ? 'Mengautentikasi Akun...' : 'Masuk Langsung sebagai Super Admin'}
+              </button>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                <span>Kredensial Default:</span>
+                <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                  <button 
+                    type="button"
+                    onClick={() => handleFillCredentials('admin', 'Password123!')}
+                    className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold border border-slate-700 cursor-pointer"
+                    title="Klik untuk isi formulir"
+                  >
+                    user: admin
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleFillCredentials('admin', 'Password123!')}
+                    className="px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold border border-slate-700 cursor-pointer"
+                    title="Klik untuk isi formulir"
+                  >
+                    pw: Password123!
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3">
               <div className="flex-1 h-px bg-slate-800" />
-              <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">atau login manual</span>
+              <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">atau login manual</span>
               <div className="flex-1 h-px bg-slate-800" />
             </div>
 
-            {/* Error */}
+            {/* Error Notification */}
             {error && (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {error}
+              <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs animate-shake">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Gagal Masuk</p>
+                  <p className="text-[11px] text-rose-300 mt-0.5">{error}</p>
+                </div>
               </div>
             )}
 
-            {/* Manual form */}
-            <form onSubmit={handleLogin} className="space-y-3 text-xs">
-              <div className="relative">
-                <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-                <input
-                  type="text" required value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder="Username"
-                  className="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs text-white outline-none transition-colors"
-                />
+            {/* Manual Form */}
+            <form onSubmit={handleLogin} className="space-y-3.5 text-xs">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-emerald-400" /> Username atau Email
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={e => setUsername(e.target.value)}
+                    placeholder="Contoh: admin atau admin@ternakmart.id"
+                    className="w-full bg-slate-950/90 border border-slate-700 hover:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 outline-none transition-all shadow-inner"
+                  />
+                </div>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
-                <input
-                  type={showPw ? 'text' : 'password'} required
-                  placeholder="Kata Sandi" value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-10 py-3 text-xs text-white outline-none transition-colors"
-                />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3.5 top-3 text-slate-500 hover:text-slate-300 transition-colors">
-                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" /> Kata Sandi
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    required
+                    placeholder="Masukkan kata sandi administrator"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full bg-slate-950/90 border border-slate-700 hover:border-slate-600 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 rounded-xl pl-4 pr-11 py-3 text-xs text-white placeholder-slate-500 outline-none transition-all shadow-inner"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3.5 top-3 text-slate-400 hover:text-emerald-400 transition-colors p-0.5"
+                    title={showPw ? 'Sembunyikan sandi' : 'Tampilkan sandi'}
+                  >
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs transition-all">
-                {loading ? 'Memproses...' : 'Masuk Manual'}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 hover:border-emerald-500 text-white font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Mengautentikasi...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Masuk ke Konsol Admin</span>
+                  </>
+                )}
               </button>
             </form>
 
-            <button onClick={onNavigateHome}
-              className="flex items-center justify-center gap-1.5 text-xs text-slate-600 hover:text-slate-400 transition-colors w-full mt-2">
-              <ArrowLeft className="w-3 h-3" /> Kembali ke Marketplace
-            </button>
+            {/* Back to Marketplace */}
+            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={onNavigateHome}
+                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-colors font-semibold group cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+                Kembali ke Pasar Ternakmart
+              </button>
+              <span className="text-[10px] text-slate-500 font-mono">Panel Otoritas</span>
+            </div>
           </div>
         </div>
       </div>
@@ -288,6 +481,15 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
             <ExternalLink className="w-3 h-3" />
             <span className="hidden lg:inline">Marketplace</span>
           </button>
+
+          <button
+            onClick={handleAdminLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-[11px] font-bold transition-colors shadow-xs cursor-pointer"
+            title="Keluar dari Admin (Akan diarahkan ke Login Admin)"
+          >
+            <LogOut className="w-3 h-3" />
+            <span className="hidden sm:inline">Keluar</span>
+          </button>
         </div>
       </header>
 
@@ -358,8 +560,8 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
                   A
                 </div>
                 <button
-                  onClick={() => { logout(); onNavigateHome(); }}
-                  className="p-1.5 rounded-lg text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                  onClick={handleAdminLogout}
+                  className="p-1.5 rounded-lg text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                   title="Keluar dari Admin"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -377,8 +579,8 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
                 </div>
               </div>
               <button
-                onClick={() => { logout(); onNavigateHome(); }}
-                className="p-1.5 rounded-lg text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors flex-shrink-0"
+                onClick={handleAdminLogout}
+                className="p-1.5 rounded-lg text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors flex-shrink-0 cursor-pointer"
                 title="Keluar dari Admin"
               >
                 <LogOut className="w-3.5 h-3.5" />
