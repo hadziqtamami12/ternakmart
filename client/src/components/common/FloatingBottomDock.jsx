@@ -58,26 +58,7 @@ export default function FloatingBottomDock({ currentPage, onNavigate }) {
   const cartCtx = useCart();
   const cartCount = cartCtx?.count || 0;
 
-  // On home page, bottom nav is hidden at top and slides up when scrolling down.
-  // On all other pages (cart, catalog, chat, profile, etc.), it stays permanently visible.
-  const [isVisible, setIsVisible] = useState(currentPage !== 'home');
-
-  useEffect(() => {
-    if (currentPage !== 'home') {
-      setIsVisible(true);
-      return;
-    }
-
-    const handleScroll = () => {
-      setIsVisible(window.scrollY > 40);
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [currentPage]);
-
-  // Map subpages to their parent bottom navigation tab
+  // Always permanently visible at the very bottom of the mobile screen
   const isHomeActive = currentPage === 'home';
   const isCatalogActive = currentPage === 'catalog' || currentPage === 'animal-detail';
   const isCartActive = currentPage === 'cart' || currentPage === 'checkout';
@@ -92,12 +73,14 @@ export default function FloatingBottomDock({ currentPage, onNavigate }) {
 
   return (
     <div
-      className={`lg:hidden fixed bottom-0 left-0 right-0 z-[1100] bg-theme-card/95 backdrop-blur-xl border-t border-theme-border shadow-dock transition-all duration-300 ease-in-out ${
-        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'
-      }`}
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-[1100] border-t border-theme-border shadow-[0_-4px_20px_rgba(0,0,0,0.12)]"
+      style={{
+        backgroundColor: 'var(--color-card, #ffffff)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+      }}
     >
       <nav
-        className="px-2 py-1 flex items-center justify-around max-w-lg mx-auto bg-transparent safe-area-bottom"
+        className="px-2 py-1.5 flex items-center justify-around max-w-lg mx-auto"
         aria-label="Navigasi Utama Mobile"
       >
         {/* 1. Beranda */}
