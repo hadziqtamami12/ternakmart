@@ -25,29 +25,59 @@ export function ThemeProvider({ children }) {
   const initializedRef = useRef(false);
 
   // Apply theme to document (both landing page and admin share the theme)
-  const applyTheme = useCallback((theme) => {
+  const applyTheme = useCallback((theme, saveStorage = true) => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('ternakmart_theme', theme);
+    const isPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('theme_preview');
+    if (saveStorage && !isPreview) {
+      localStorage.setItem('ternakmart_theme', theme);
+    }
   }, []);
 
-  // Sync with server theme when available
+  // Sync with server theme when available (skip if inside preview mode)
   useEffect(() => {
+    const isPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('theme_preview');
+    if (isPreview) return;
+
     if (serverTheme && serverTheme !== marketplaceTheme) {
       setMarketplaceTheme(serverTheme);
-      applyTheme(serverTheme, isAdminMode);
+      applyTheme(serverTheme);
     }
-  }, [serverTheme, isAdminMode, applyTheme]);
+  }, [serverTheme, marketplaceTheme, applyTheme]);
 
-  // Initial load from localStorage (fallback) and apply
+  // Initial load from URL preview or localStorage (fallback) and apply
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
-      const stored = localStorage.getItem('ternakmart_theme');
-      const initialTheme = stored || 'meadow-emerald';
-      setMarketplaceTheme(initialTheme);
-      applyTheme(initialTheme, isAdminMode);
+      const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const previewParam = params?.get('theme_preview');
+
+      if (previewParam && THEMES.some(t => t.id === previewParam)) {
+        setMarketplaceTheme(previewParam);
+        document.documentElement.setAttribute('data-theme', previewParam);
+      } else {
+        const stored = localStorage.getItem('ternakmart_theme');
+        const initialTheme = stored || 'meadow-emerald';
+        setMarketplaceTheme(initialTheme);
+        applyTheme(initialTheme);
+      }
     }
-  }, [isAdminMode, applyTheme]);
+  }, [applyTheme]);
+
+  // Listen for live postMessage theme change events (from parent admin preview)
+  useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data && e.data.type === 'SET_THEME_PREVIEW') {
+        const nextTheme = e.data.theme;
+        if (THEMES.some(t => t.id === nextTheme)) {
+          setMarketplaceTheme(nextTheme);
+          document.documentElement.setAttribute('data-theme', nextTheme);
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   // Override global setter with actual implementation
   useEffect(() => {

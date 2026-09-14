@@ -30,6 +30,18 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
     setDocumentTitle('Katalog Hewan Ternak');
   }, []);
 
+  // Lock body scroll when mobile filter overlay is active
+  useEffect(() => {
+    if (isFilterDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isFilterDrawerOpen]);
+
   const fetchAnimals = async () => {
     setLoading(true);
     try {
@@ -385,11 +397,11 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
         </div>
       </div>
 
-      {/* Full-Height Mobile Filter Overlay (Completely Covers Topbar) */}
+      {/* Full-Height Mobile Filter Overlay (Completely Covers Topbar & Full Screen Height) */}
       {isFilterDrawerOpen && (
-        <div className="fixed inset-0 z-[9999] bg-theme-card flex flex-col w-full h-full lg:hidden animate-in slide-in-from-bottom duration-200">
+        <div className="fixed inset-0 z-[9999] bg-theme-card flex flex-col w-full w-screen h-screen h-[100dvh] max-h-[100dvh] lg:hidden overflow-hidden animate-in slide-in-from-bottom duration-200">
           {/* Header */}
-          <div className="px-5 py-4 border-b border-theme-border flex items-center justify-between flex-shrink-0 bg-theme-card sticky top-0 z-10 shadow-sm">
+          <div className="px-5 py-4 border-b border-theme-border flex items-center justify-between flex-shrink-0 bg-theme-card z-10 shadow-xs">
             <button
               type="button"
               onClick={() => setIsFilterDrawerOpen(false)}
@@ -415,7 +427,7 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
           </div>
 
           {/* Scrollable Filter Body */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-28">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-6 pb-6">
             {/* Live Search Input */}
             <div className="space-y-2">
               <label className="text-xs font-black text-theme-text uppercase tracking-wider block">
@@ -605,8 +617,8 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
             </div>
           </div>
 
-          {/* Sticky Bottom Action Bar */}
-          <div className="p-4 border-t border-theme-border bg-theme-card sticky bottom-0 z-20 shadow-2xl safe-area-bottom flex items-center gap-3">
+          {/* Fixed Bottom Action Bar */}
+          <div className="flex-shrink-0 p-4 pb-6 sm:pb-4 border-t border-theme-border bg-theme-card z-20 shadow-2xl flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsFilterDrawerOpen(false)}

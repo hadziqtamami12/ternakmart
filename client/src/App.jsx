@@ -179,7 +179,7 @@ function AppContent() {
       />
 
       {/* Main Routed Page Content */}
-      <main className={`flex-1 w-full max-w-full overflow-x-hidden ${currentPage !== 'home' ? 'pt-16 lg:pt-20' : 'pt-0'}`}>
+      <main className={`flex-1 w-full max-w-full overflow-x-hidden pb-20 lg:pb-0 ${currentPage !== 'home' ? 'pt-16 lg:pt-20' : 'pt-0'}`}>
         {currentPage === 'home' && (
           <HomePage
             onNavigate={navigateTo}
