@@ -65,6 +65,10 @@ class MockDatabaseDriver {
 
   async persist() {
     try {
+      if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+        // Read-only filesystem in serverless; keep in memory
+        return;
+      }
       for (const [colKey, seedList] of Object.entries(initialSeeds)) {
         if (!this.store[colKey] || !Array.isArray(this.store[colKey])) {
           this.store[colKey] = JSON.parse(JSON.stringify(seedList));
@@ -72,7 +76,7 @@ class MockDatabaseDriver {
       }
       fs.writeFileSync(MOCK_STORE_FILE, JSON.stringify(this.store, null, 2), 'utf8');
     } catch (err) {
-      console.error('❌ [Database] Failed to write mockStore.json:', err.message);
+      console.warn('⚠️ [Database] Skipped mockStore.json write (read-only environment):', err.message);
     }
   }
 
@@ -242,9 +246,14 @@ class PostgresDatabaseDriver {
       this.pool = new Pool({
         connectionString: connStr,
         ssl: { rejectUnauthorized: false },
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000
+        max: process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME ? 2 : 10,
+        idleTimeoutMillis: process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME ? 1000 : 10000,
+        connectionTimeoutMillis: 5000,
+        allowExitOnIdle: true
+      });
+
+      this.pool.on('error', (poolErr) => {
+        console.warn('⚠️ [Postgres Pool Background Error]:', poolErr.message);
       });
 
       const res = await this.pool.query('SELECT 1 as connected');
