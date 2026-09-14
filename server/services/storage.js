@@ -4,9 +4,16 @@ const path = require('path');
 
 class LocalStorageService {
   constructor() {
-    this.uploadDir = path.join(process.cwd(), process.env.UPLOAD_DIR || 'public/uploads');
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+    const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+    this.uploadDir = isServerless 
+      ? path.join('/tmp', 'uploads') 
+      : path.join(process.cwd(), process.env.UPLOAD_DIR || 'public/uploads');
+    try {
+      if (!fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+      }
+    } catch (e) {
+      console.warn('⚠️ [Storage] Could not create upload directory:', e.message);
     }
   }
 

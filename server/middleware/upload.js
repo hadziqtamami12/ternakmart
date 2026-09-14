@@ -3,9 +3,17 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const uploadDir = path.join(process.cwd(), process.env.UPLOAD_DIR || 'public/uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const uploadDir = isServerless 
+  ? path.join('/tmp', 'uploads') 
+  : path.join(process.cwd(), process.env.UPLOAD_DIR || 'public/uploads');
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('⚠️ [Upload Middleware] Could not create upload directory:', e.message);
 }
 
 // Storage engine configuration

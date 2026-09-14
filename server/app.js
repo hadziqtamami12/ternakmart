@@ -39,7 +39,10 @@ app.use((req, res, next) => {
 });
 
 // Static uploads directory serving
-const uploadDir = path.join(process.cwd(), process.env.UPLOAD_DIR || 'public/uploads');
+const isServerless = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const uploadDir = isServerless 
+  ? path.join('/tmp', 'uploads') 
+  : path.join(process.cwd(), process.env.UPLOAD_DIR || 'public/uploads');
 app.use('/uploads', express.static(uploadDir));
 
 // Route Imports
