@@ -31,53 +31,69 @@ import { useAppConfig } from '../../context/AppConfigContext';
 import { useTheme } from '../../context/ThemeContext';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
 
-/* ─── Realistic Landing Page Theme Preview (Desktop & Mobile) ─── */
+//* ─── Realistic Landing Page Theme Preview (Desktop & Mobile) ─── */
 function ThemePreview({ themeId, availableThemes }) {
-  const [viewMode, setViewMode] = useState('desktop'); // 'desktop' | 'mobile'
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 'mobile';
+    }
+    return 'desktop';
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640 && viewMode === 'desktop') {
+        setViewMode('mobile');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
+
   const t = availableThemes.find(x => x.id === themeId) || availableThemes[0];
   const bg = t.preview?.[0] || t.bg || '#F0FDF4';
   const primary = t.preview?.[1] || t.color || '#15803D';
   const accent = t.preview?.[2] || '#86EFAC';
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 w-full max-w-full overflow-hidden">
       {/* Switcher Controls: Desktop vs Mobile */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <span className="text-[11px] font-bold text-slate-400">Mode Pratinjau Tampilan:</span>
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setViewMode('desktop')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               viewMode === 'desktop'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span>Desktop (16:9)</span>
+            <span>Desktop</span>
           </button>
           <button
             type="button"
             onClick={() => setViewMode('mobile')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               viewMode === 'mobile'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Mobile (375px)</span>
+            <span>Mobile</span>
           </button>
         </div>
       </div>
 
       {/* Frame Container */}
-      <div className="flex justify-center w-full overflow-hidden bg-slate-950/80 rounded-2xl p-2 sm:p-4 border border-slate-800">
+      <div className="w-full max-w-full overflow-hidden bg-slate-950/80 rounded-2xl p-2 sm:p-4 border border-slate-800 flex justify-center items-center">
         {viewMode === 'desktop' ? (
           /* DESKTOP MOCKUP */
           <div
-            className="w-full max-w-4xl rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl transition-all"
+            className="w-full max-w-full lg:max-w-4xl rounded-2xl overflow-hidden border border-slate-700/60 shadow-2xl transition-all"
             style={{ background: bg }}
           >
             {/* Browser Header Bar */}
@@ -93,26 +109,26 @@ function ThemePreview({ themeId, availableThemes }) {
             </div>
 
             {/* Desktop Navbar (Adaptive) */}
-            <div className="px-5 py-3 border-b border-black/5 flex items-center justify-between backdrop-blur-md bg-white/70">
-              <div className="flex items-center gap-6">
+            <div className="px-4 sm:px-5 py-3 border-b border-black/5 flex items-center justify-between backdrop-blur-md bg-white/70">
+              <div className="flex items-center gap-4 sm:gap-6">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ background: primary }}>
-                    🐂
+                    🐐
                   </div>
                   <span className="font-black text-sm tracking-tight" style={{ color: primary }}>
                     TernakMart
                   </span>
                 </div>
                 {/* Search box */}
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-black/10 bg-white/80 text-slate-400 text-[11px] w-64">
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-black/10 bg-white/80 text-slate-400 text-[11px] w-56">
                   <Search className="w-3.5 h-3.5" />
-                  <span className="truncate">Cari sapi limosin, domba Garut...</span>
+                  <span className="truncate">Cari sapi limosin, kambing...</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs font-bold">
                 <span style={{ color: primary }}>Katalog</span>
-                <span className="text-slate-600">Buka Toko</span>
+                <span className="hidden sm:inline text-slate-600">Buka Toko</span>
                 <div className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-[11px] shadow-sm relative" style={{ background: primary }}>
                   🛒
                   <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center font-black">2</span>
@@ -120,8 +136,8 @@ function ThemePreview({ themeId, availableThemes }) {
               </div>
             </div>
 
-            {/* Desktop Hero Section - 100% Faithful to HomePage */}
-            <div className="relative h-72 sm:h-80 overflow-hidden flex items-center px-6 sm:px-10 text-white select-none">
+            {/* Desktop Hero Section */}
+            <div className="relative min-h-[260px] sm:h-80 overflow-hidden flex items-center px-4 sm:px-10 text-white select-none">
               <img
                 src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=1920&auto=format&fit=crop&q=85"
                 alt="Hero"
@@ -130,84 +146,79 @@ function ThemePreview({ themeId, availableThemes }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/75 -z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent -z-10" />
 
-              <div className="max-w-xl space-y-3.5">
-                {/* Real Badge row from HomePage */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    FESTIVAL AKBAR QURBAN 1447H
+              <div className="max-w-xl space-y-2.5 sm:space-y-3.5 py-4">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[9px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-sm">
+                    <Sparkles className="w-3 h-3 text-emerald-400" />
+                    FESTIVAL QURBAN 1447H
                   </span>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-                    🐂 SAPI & DOMBA SUPER
-                  </span>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-400/30 text-amber-300 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-md">
-                    Kupon: QURBANBERKAH
+                  <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-white/15 border border-white/20 text-white text-[9px] sm:text-xs font-bold uppercase tracking-wider backdrop-blur-md">
+                    🐐 SAPI & KAMBING SUPER
                   </span>
                 </div>
 
-                <h1 className="text-xl sm:text-3xl font-black tracking-tight text-white leading-[1.15] drop-shadow-md">
+                <h1 className="text-lg sm:text-3xl font-black tracking-tight text-white leading-[1.2] drop-shadow-md">
                   Diskon Spesial Ternak Hingga Rp 1.500.000
                 </h1>
 
                 <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-lg line-clamp-2 drop-shadow">
-                  Pesan hewan qurban bersertifikat sehat SKKH resmi. Gratis biaya perawatan & pakan sampai Hari Raya Idul Adha 1447H.
+                  Pesan hewan qurban bersertifikat sehat SKKH resmi. Gratis biaya perawatan & pakan sampai Hari Raya Idul Adha.
                 </p>
 
-                {/* Dual CTA buttons matching HomePage */}
-                <div className="flex items-center gap-2.5 pt-1">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-1">
                   <button
-                    className="px-5 py-2.5 rounded-2xl text-slate-950 font-black text-xs flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all"
+                    className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl text-slate-950 font-black text-xs flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all"
                     style={{ background: primary }}
                   >
                     <span>Beli Ternak Qurban</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
-                  <button className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold text-xs backdrop-blur-md shadow-md flex items-center gap-2">
+                  <button className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold text-xs backdrop-blur-md shadow-md flex items-center gap-1.5">
                     <span>Jelajahi Semua Hewan</span>
-                    <ChevronRight className="w-4 h-4 text-white/70" />
+                    <ChevronRight className="w-3.5 h-3.5 text-white/70" />
                   </button>
                 </div>
               </div>
 
               {/* Slider Dots */}
-              <div className="absolute bottom-4 right-6 flex items-center gap-2 z-20 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15">
-                <div className="h-2 w-7 rounded-full shadow-sm" style={{ background: primary }} />
-                <div className="h-2 w-2 rounded-full bg-white/40" />
-                <div className="h-2 w-2 rounded-full bg-white/40" />
+              <div className="absolute bottom-3 sm:bottom-4 right-4 sm:right-6 flex items-center gap-1.5 sm:gap-2 z-20 bg-black/30 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-white/15">
+                <div className="h-1.5 sm:h-2 w-5 sm:w-7 rounded-full shadow-sm" style={{ background: primary }} />
+                <div className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-white/40" />
+                <div className="h-1.5 sm:h-2 w-1.5 sm:w-2 rounded-full bg-white/40" />
               </div>
             </div>
 
             {/* Category Quick Row */}
-            <div className="p-4 sm:p-6 space-y-4">
+            <div className="p-3 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-black text-sm tracking-tight" style={{ color: primary }}>Kategori Unggulan</h3>
-                  <p className="text-[10px] text-slate-500">Pilihan ternak qurban & bibit unggul siap kirim</p>
+                  <h3 className="font-black text-xs sm:text-sm tracking-tight" style={{ color: primary }}>Kategori Unggulan</h3>
+                  <p className="text-[9px] sm:text-[10px] text-slate-500">Pilihan ternak qurban & bibit unggul siap kirim</p>
                 </div>
-                <span className="text-xs font-bold cursor-pointer" style={{ color: primary }}>Lihat Semua →</span>
+                <span className="text-[11px] sm:text-xs font-bold cursor-pointer" style={{ color: primary }}>Lihat Semua →</span>
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {[
-                  { name: 'Sapi Simental & Limosin', count: '142 Ekor', icon: '🐂' },
-                  { name: 'Domba Garut & Merino', count: '310 Ekor', icon: '🐑' },
-                  { name: 'Kambing Etawa & Boer', count: '198 Ekor', icon: '🐐' },
-                  { name: 'Paket Qurban & Aqiqah', count: 'Siap Potong', icon: '🍲' }
+                  { name: 'Sapi Simental', count: '142 Ekor', icon: '🐂' },
+                  { name: 'Domba Garut', count: '310 Ekor', icon: '🐑' },
+                  { name: 'Kambing Etawa', count: '198 Ekor', icon: '🐐' },
+                  { name: 'Paket Aqiqah', count: 'Siap Potong', icon: '🍲' }
                 ].map((c, i) => (
                   <div
                     key={i}
-                    className="p-3 rounded-2xl border transition-all text-center flex flex-col items-center justify-center gap-1 bg-white/80 shadow-sm hover:shadow-md"
+                    className="p-2 sm:p-3 rounded-xl sm:rounded-2xl border transition-all text-center flex flex-col items-center justify-center gap-0.5 sm:gap-1 bg-white/80 shadow-xs"
                     style={{ borderColor: primary + '25' }}
                   >
-                    <span className="text-2xl">{c.icon}</span>
-                    <span className="font-extrabold text-[11px] truncate w-full text-slate-800">{c.name}</span>
-                    <span className="text-[9px] font-bold" style={{ color: primary }}>{c.count}</span>
+                    <span className="text-xl sm:text-2xl">{c.icon}</span>
+                    <span className="font-extrabold text-[10px] sm:text-[11px] truncate w-full text-slate-800">{c.name}</span>
+                    <span className="text-[8px] sm:text-[9px] font-bold" style={{ color: primary }}>{c.count}</span>
                   </div>
                 ))}
               </div>
 
               {/* Sample Product Cards Grid */}
-              <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 pt-1">
                 {[
                   {
                     title: 'Sapi Simental Bobot 540kg',
@@ -230,21 +241,21 @@ function ThemePreview({ themeId, availableThemes }) {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className="rounded-2xl overflow-hidden border bg-white/90 shadow-sm flex flex-col justify-between"
+                    className="rounded-xl sm:rounded-2xl overflow-hidden border bg-white/90 shadow-xs flex flex-col justify-between"
                     style={{ borderColor: primary + '20' }}
                   >
-                    <div className="relative h-28 w-full overflow-hidden">
+                    <div className="relative h-24 sm:h-28 w-full overflow-hidden">
                       <img src={item.img} alt={item.title} className="w-full h-full object-cover" />
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500 text-white shadow-sm">
+                      <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-emerald-500 text-white shadow-xs">
                         SKKH Aktif
                       </span>
                     </div>
-                    <div className="p-3 space-y-1">
-                      <p className="font-extrabold text-xs truncate text-slate-800">{item.title}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{item.store}</p>
+                    <div className="p-2.5 sm:p-3 space-y-0.5 sm:space-y-1">
+                      <p className="font-extrabold text-[11px] sm:text-xs truncate text-slate-800">{item.title}</p>
+                      <p className="text-[9px] sm:text-[10px] text-slate-500 truncate">{item.store}</p>
                       <div className="flex items-center justify-between pt-1">
                         <span className="font-black text-xs" style={{ color: primary }}>{item.price}</span>
-                        <button className="px-2 py-1 rounded-lg text-white text-[10px] font-bold" style={{ background: primary }}>
+                        <button className="px-2 py-1 rounded-lg text-white text-[9px] sm:text-[10px] font-bold" style={{ background: primary }}>
                           + Beli
                         </button>
                       </div>
@@ -255,40 +266,40 @@ function ThemePreview({ themeId, availableThemes }) {
             </div>
           </div>
         ) : (
-          /* MOBILE MOCKUP (Smartphone Frame) */
+          /* MOBILE MOCKUP (Smartphone Frame - strictly bounded to screen, zero horizontal overflow) */
           <div
-            className="w-[360px] rounded-[2.5rem] overflow-hidden border-4 border-slate-800 shadow-2xl relative"
+            className="w-full max-w-[310px] sm:max-w-[350px] mx-auto rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden border-[3px] sm:border-4 border-slate-800 shadow-2xl relative transition-all"
             style={{ background: bg }}
           >
             {/* Phone Notch */}
-            <div className="h-5 bg-slate-900 flex items-center justify-center relative">
-              <div className="w-24 h-3 bg-black rounded-b-xl flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-slate-800 mr-2" />
-                <div className="w-8 h-1 rounded-full bg-slate-800" />
+            <div className="h-4 sm:h-5 bg-slate-900 flex items-center justify-center relative">
+              <div className="w-20 sm:w-24 h-2.5 sm:h-3 bg-black rounded-b-xl flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-slate-800 mr-1.5 sm:mr-2" />
+                <div className="w-6 sm:w-8 h-1 rounded-full bg-slate-800" />
               </div>
             </div>
 
             {/* Mobile Topbar */}
-            <div className="px-4 py-2.5 flex items-center justify-between border-b border-black/5 bg-white/80 backdrop-blur-md">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: primary }}>
-                  🐂
+            <div className="px-3 sm:px-4 py-2 flex items-center justify-between border-b border-black/5 bg-white/80 backdrop-blur-md">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: primary }}>
+                  🐐
                 </div>
-                <span className="font-black text-xs" style={{ color: primary }}>TernakMart</span>
+                <span className="font-black text-xs truncate" style={{ color: primary }}>TernakMart</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-xs">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 text-[10px]">
                   <Search className="w-3 h-3" />
                 </div>
-                <div className="w-6 h-6 rounded-lg text-white flex items-center justify-center text-[10px] relative" style={{ background: primary }}>
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg text-white flex items-center justify-center text-[10px] relative" style={{ background: primary }}>
                   🛒
-                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-rose-500 text-white text-[7px] flex items-center justify-center font-black">2</span>
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-500 text-white text-[7px] flex items-center justify-center font-black">2</span>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Hero - Matching HomePage Mobile */}
-            <div className="relative h-56 overflow-hidden flex items-end p-4 text-white select-none">
+            {/* Mobile Hero */}
+            <div className="relative min-h-[190px] sm:h-52 overflow-hidden flex items-end p-3 sm:p-4 text-white select-none">
               <img
                 src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=85"
                 alt="Hero"
@@ -297,50 +308,50 @@ function ThemePreview({ themeId, availableThemes }) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/75 -z-10" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent -z-10" />
 
-              <div className="space-y-2 w-full">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-[8px] font-black uppercase tracking-wider backdrop-blur-md">
-                    <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
-                    FESTIVAL QURBAN 1447H
+              <div className="space-y-1.5 w-full">
+                <div className="flex flex-wrap items-center gap-1">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-[7px] sm:text-[8px] font-black uppercase tracking-wider backdrop-blur-md">
+                    <Sparkles className="w-2 h-2 text-emerald-400" />
+                    FESTIVAL QURBAN
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-white/15 border border-white/20 text-white">
-                    🐂 SAPI & DOMBA
+                  <span className="px-1.5 py-0.5 rounded-full text-[7px] sm:text-[8px] font-bold bg-white/15 border border-white/20 text-white">
+                    🐐 SAPI & KAMBING
                   </span>
                 </div>
-                <h2 className="text-sm font-black leading-tight text-white drop-shadow">
+                <h2 className="text-xs sm:text-sm font-black leading-tight text-white drop-shadow">
                   Diskon Spesial Ternak Hingga Rp 1.500.000
                 </h2>
-                <p className="text-[10px] text-slate-200 line-clamp-1">
+                <p className="text-[9px] sm:text-[10px] text-slate-200 line-clamp-1">
                   Pesan hewan qurban bersertifikat SKKH resmi gratis rawat pakan.
                 </p>
-                <div className="flex items-center gap-2 pt-0.5">
+                <div className="flex items-center gap-1.5 pt-0.5">
                   <button
-                    className="px-3 py-1.5 rounded-xl text-[10px] font-black text-slate-950 shadow-md flex items-center gap-1"
+                    className="px-2.5 py-1 rounded-lg text-[9px] sm:text-[10px] font-black text-slate-950 shadow-md flex items-center gap-1"
                     style={{ background: primary }}
                   >
                     <span>Beli Qurban</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <ArrowRight className="w-2.5 h-2.5" />
                   </button>
-                  <button className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold text-white bg-white/20 backdrop-blur-md">
+                  <button className="px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-bold text-white bg-white/20 backdrop-blur-md">
                     Jelajahi
                   </button>
                 </div>
               </div>
 
               {/* Mobile slider dots */}
-              <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full border border-white/20">
-                <div className="h-1.5 w-4 rounded-full" style={{ background: primary }} />
-                <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
-                <div className="h-1.5 w-1.5 rounded-full bg-white/40" />
+              <div className="absolute top-2.5 right-2.5 flex items-center gap-1 bg-black/40 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/20">
+                <div className="h-1 w-3.5 rounded-full" style={{ background: primary }} />
+                <div className="h-1 w-1 rounded-full bg-white/40" />
+                <div className="h-1 w-1 rounded-full bg-white/40" />
               </div>
             </div>
 
             {/* Mobile Categories Scroll */}
-            <div className="p-3 space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider block" style={{ color: primary }}>
+            <div className="p-2.5 sm:p-3 space-y-1.5">
+              <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider block" style={{ color: primary }}>
                 Kategori Hewan
               </span>
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar max-w-full">
                 {[
                   { name: 'Sapi', icon: '🐂' },
                   { name: 'Domba', icon: '🐑' },
@@ -349,17 +360,17 @@ function ThemePreview({ themeId, availableThemes }) {
                 ].map((cat, i) => (
                   <div
                     key={i}
-                    className="flex-shrink-0 px-3 py-2 rounded-xl text-center min-w-[65px] bg-white/90 border shadow-xs"
+                    className="flex-shrink-0 px-2 py-1.5 rounded-xl text-center min-w-[55px] sm:min-w-[62px] bg-white/90 border shadow-xs"
                     style={{ borderColor: primary + '30' }}
                   >
-                    <span className="text-base block">{cat.icon}</span>
-                    <span className="text-[9px] font-bold text-slate-800">{cat.name}</span>
+                    <span className="text-sm block">{cat.icon}</span>
+                    <span className="text-[8px] sm:text-[9px] font-bold text-slate-800">{cat.name}</span>
                   </div>
                 ))}
               </div>
 
               {/* Mobile 2-Column Catalog Grid */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-2 gap-1.5 pt-1">
                 {[
                   {
                     title: 'Simental 540kg',
@@ -377,12 +388,12 @@ function ThemePreview({ themeId, availableThemes }) {
                     className="rounded-xl overflow-hidden border bg-white/95 shadow-xs"
                     style={{ borderColor: primary + '20' }}
                   >
-                    <img src={item.img} alt={item.title} className="w-full h-20 object-cover" />
-                    <div className="p-2 space-y-0.5">
-                      <p className="font-bold text-[10px] truncate text-slate-800">{item.title}</p>
-                      <p className="font-black text-[11px]" style={{ color: primary }}>{item.price}</p>
-                      <button className="w-full py-1 rounded-md text-[9px] font-bold text-white mt-1" style={{ background: primary }}>
-                        + Keranjang
+                    <img src={item.img} alt={item.title} className="w-full h-16 sm:h-20 object-cover" />
+                    <div className="p-1.5 space-y-0.5">
+                      <p className="font-bold text-[9px] sm:text-[10px] truncate text-slate-800">{item.title}</p>
+                      <p className="font-black text-[10px] sm:text-[11px]" style={{ color: primary }}>{item.price}</p>
+                      <button className="w-full py-1 rounded-md text-[8px] sm:text-[9px] font-bold text-white mt-0.5" style={{ background: primary }}>
+                        + Beli
                       </button>
                     </div>
                   </div>
@@ -391,22 +402,22 @@ function ThemePreview({ themeId, availableThemes }) {
             </div>
 
             {/* Mobile Bottom Dock */}
-            <div className="px-4 py-2 border-t border-black/5 bg-white/95 flex items-center justify-between text-center">
+            <div className="px-3 py-1.5 border-t border-black/5 bg-white/95 flex items-center justify-between text-center">
               <div className="flex flex-col items-center gap-0.5 cursor-pointer">
                 <span className="text-xs" style={{ color: primary }}>🏠</span>
-                <span className="text-[8px] font-bold" style={{ color: primary }}>Beranda</span>
+                <span className="text-[7px] sm:text-[8px] font-bold" style={{ color: primary }}>Beranda</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 cursor-pointer text-slate-400">
                 <span className="text-xs">📋</span>
-                <span className="text-[8px] font-medium">Katalog</span>
+                <span className="text-[7px] sm:text-[8px] font-medium">Katalog</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 cursor-pointer text-slate-400">
                 <span className="text-xs">📦</span>
-                <span className="text-[8px] font-medium">Pesanan</span>
+                <span className="text-[7px] sm:text-[8px] font-medium">Pesanan</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 cursor-pointer text-slate-400">
                 <span className="text-xs">👤</span>
-                <span className="text-[8px] font-medium">Akun</span>
+                <span className="text-[7px] sm:text-[8px] font-medium">Akun</span>
               </div>
             </div>
           </div>
@@ -725,7 +736,7 @@ export default function BrandingSettingsPage({ onBack }) {
             </div>
 
             {/* Live Preview Section (DI BAWAH Pilihan Tema) */}
-            <div className="p-4 rounded-2xl bg-theme-bg border border-theme-border space-y-3 animate-in fade-in mt-4">
+            <div className="p-2.5 sm:p-4 rounded-2xl bg-theme-bg border border-theme-border space-y-3 animate-in fade-in mt-4 w-full max-w-full overflow-hidden">
               <label className="font-bold text-theme-text block text-xs">Live Preview Tema Landing Page</label>
               <ThemePreview themeId={theme} availableThemes={availableThemes} />
               <p className="text-[10px] text-theme-muted">
