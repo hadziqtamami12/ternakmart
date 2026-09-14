@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Platform E-Commerce Peternakan & Logistik Armada Mandiri",
   "main": "server/server.js",
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev": "node scripts/dev.js",
     "dev:server": "node server/server.js",
@@ -40,5 +44,8 @@
     "multer": "^1.4.5-lts.1",
     "pg": "^8.23.0",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "vite": "^5.2.13"
   }
 }
