@@ -13,7 +13,11 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    const rawItems = cart.items_json || [];
+    let rawItems = cart.items_json || [];
+    if (typeof rawItems === 'string') {
+      try { rawItems = JSON.parse(rawItems); } catch (e) { rawItems = []; }
+    }
+    if (!Array.isArray(rawItems)) rawItems = [];
 
     // Consolidate duplicate animal_id entries by summing their quantities
     const consolidatedMap = new Map();
@@ -111,6 +115,10 @@ exports.addToCart = async (req, res) => {
     }
 
     let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
     const targetIdStr = String(animal_id);
     let found = false;
     const cleanItems = [];
@@ -169,11 +177,15 @@ exports.updateQuantity = async (req, res) => {
 
     const cart = carts[0];
     let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
 
     if (newQty <= 0) {
-      items = items.filter(i => i.animal_id !== animal_id);
+      items = items.filter(i => String(i.animal_id) !== String(animal_id));
     } else {
-      const idx = items.findIndex(i => i.animal_id === animal_id);
+      const idx = items.findIndex(i => String(i.animal_id) === String(animal_id));
       if (idx > -1) {
         items[idx].quantity = newQty;
       }
@@ -199,8 +211,14 @@ exports.bulkDelete = async (req, res) => {
     }
 
     const cart = carts[0];
-    let items = (cart.items_json || []).filter(i => !animal_ids.includes(i.animal_id));
-    await db.update('carts', cart.id, { items_json: items });
+    let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    const idSet = new Set(animal_ids.map(id => String(id)));
+    const cleanItems = items.filter(i => !idSet.has(String(i.animal_id)));
+    await db.update('carts', cart.id, { items_json: cleanItems });
 
     return res.json({ success: true, message: `${animal_ids.length} item berhasil dihapus dari keranjang.` });
   } catch (err) {
@@ -217,8 +235,13 @@ exports.removeFromCart = async (req, res) => {
     }
 
     const cart = carts[0];
-    let items = (cart.items_json || []).filter(i => i.animal_id !== animal_id);
-    await db.update('carts', cart.id, { items_json: items });
+    let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    const cleanItems = items.filter(i => String(i.animal_id) !== String(animal_id));
+    await db.update('carts', cart.id, { items_json: cleanItems });
 
     return res.json({
       success: true,

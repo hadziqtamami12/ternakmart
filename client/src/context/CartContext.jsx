@@ -307,14 +307,17 @@ export function CartProvider({ children }) {
     return { success: true };
   };
 
-  const totalCount = (cart.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+  // Unique product count: jika produk sama maka tetap dihitung 1
+  const uniqueCount = new Set((cart.items || []).map(i => String(i.animal_id || i.id))).size;
+  const totalQuantity = (cart.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   return (
     <CartContext.Provider
       value={{
         cart,
         items: cart.items || [],
-        count: totalCount,
+        count: uniqueCount,
+        totalQuantity,
         loading,
         isDrawerOpen,
         openDrawer: () => setIsDrawerOpen(true),
