@@ -8,38 +8,29 @@ function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'p
   
   // High-contrast vibrant styling dynamically adapted to the active marketplace theme
   const activeIconWrapper = isAmber
-    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/40 ring-4 ring-theme-card -translate-y-2.5 scale-105 rounded-full'
-    : 'bg-theme-primary text-theme-primary-contrast shadow-lg shadow-theme-primary/40 ring-4 ring-theme-card -translate-y-2.5 scale-105 rounded-full';
+    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30 -translate-y-2 scale-105 rounded-full'
+    : 'bg-theme-primary text-theme-primary-contrast shadow-md shadow-theme-primary/30 -translate-y-2 scale-105 rounded-full';
   
   const activeText = isAmber
-    ? 'text-amber-600 dark:text-amber-400 font-black'
-    : 'text-theme-primary font-black';
-    
-  const activePill = isAmber ? 'bg-amber-500' : 'bg-theme-primary';
+    ? 'text-amber-600 dark:text-amber-400 font-bold'
+    : 'text-theme-primary font-bold';
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="relative flex flex-col items-center justify-center flex-1 pt-1.5 pb-1 transition-all duration-200 group focus:outline-none"
+      className="relative flex flex-col items-center justify-center flex-1 pt-1.5 pb-1.5 transition-all duration-200 group outline-none focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none border-0 select-none [-webkit-tap-highlight-color:transparent]"
     >
-      {/* Efek lengkungan halus ke atas untuk tab aktif */}
+      {/* Efek lengkungan halus ke atas untuk tab aktif tanpa garis/border warna */}
       {isActive && (
         <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 pointer-events-none z-0">
           <svg
             viewBox="0 0 68 16"
-            className="w-[68px] h-[16px] overflow-visible drop-shadow-[0_-3px_5px_rgba(0,0,0,0.06)]"
+            className="w-[68px] h-[16px] overflow-visible drop-shadow-[0_-2px_4px_rgba(0,0,0,0.05)]"
           >
             <path
               d="M 0 14 C 13 14, 17 2, 34 2 C 51 2, 55 14, 68 14 L 68 16 L 0 16 Z"
               style={{ fill: 'var(--color-card, #ffffff)' }}
-            />
-            <path
-              d="M 0 14 C 13 14, 17 2, 34 2 C 51 2, 55 14, 68 14"
-              fill="none"
-              stroke="currentColor"
-              style={{ stroke: 'var(--color-border, #e5e7eb)' }}
-              strokeWidth="1.2"
             />
           </svg>
         </div>
@@ -61,16 +52,11 @@ function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'p
       </div>
       <span
         className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 relative z-10 ${
-          isActive ? activeText : 'text-theme-muted/80 font-semibold'
+          isActive ? activeText : 'text-theme-muted/80 font-medium'
         }`}
       >
         {label}
       </span>
-      {isActive ? (
-        <span className={`w-3.5 h-1 rounded-full ${activePill} mt-0.5 shadow-sm animate-in zoom-in duration-200 relative z-10`} />
-      ) : (
-        <span className="w-3.5 h-1 rounded-full bg-transparent mt-0.5" />
-      )}
     </button>
   );
 }
