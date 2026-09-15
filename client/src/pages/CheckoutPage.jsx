@@ -27,7 +27,7 @@ import { useCart } from '../context/CartContext';
 import { useAppConfig } from '../context/AppConfigContext';
 import AddressFormModal from '../components/common/AddressFormModal';
 
-export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
+export default function CheckoutPage({ animalId, animalIds = [], voucherCode: initialVoucherCode = '', onNavigate }) {
   const { config, setDocumentTitle } = useAppConfig();
   const { user, isAuthenticated } = useAuth();
   const { removeFromCart, bulkDelete } = useCart();
@@ -39,8 +39,14 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
   // Delivery & Maps state
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address || 'Jl. Tebet Barat Dalam VII No. 14, Jakarta Selatan');
   const [mapsUrl, setMapsUrl] = useState('https://maps.app.goo.gl/kandang-jakarta');
-  const [destLat, setDestLat] = useState(user?.latitude || -6.2415);
-  const [destLng, setDestLng] = useState(user?.longitude || 106.8532);
+  const [destLat, setDestLat] = useState(() => {
+    const parsed = parseFloat(user?.latitude);
+    return !isNaN(parsed) ? parsed : -6.2415;
+  });
+  const [destLng, setDestLng] = useState(() => {
+    const parsed = parseFloat(user?.longitude);
+    return !isNaN(parsed) ? parsed : 106.8532;
+  });
   const [gpsStatus, setGpsStatus] = useState('');
 
   // Address & Expedition states
@@ -54,7 +60,7 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
   const [selectedCourier, setSelectedCourier] = useState('JNE Trucking (JTR)');
 
   // Voucher state
-  const [voucherCode, setVoucherCode] = useState('');
+  const [voucherCode, setVoucherCode] = useState(initialVoucherCode || '');
   const [appliedVoucher, setAppliedVoucher] = useState(null);
   const [voucherError, setVoucherError] = useState('');
 
@@ -119,7 +125,7 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
               setMapsUrl(`https://www.google.com/maps?q=${lat},${lng}`);
             }
           }
-        } catch (e) {}
+        } catch (e) { }
 
         // Load shipping settings
         try {
@@ -127,13 +133,17 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
           if (shipRes.success && shipRes.data) {
             setShippingSettings(shipRes.data);
           }
-        } catch (e) {}
+        } catch (e) { }
 
         setAnimals(loadedAnimals);
+        const effectiveBase = loadedAnimals.reduce((acc, a) => acc + parseFloat(a.price || 0), 0);
 
         // Initial rates calculation
         if (loadedAnimals.length > 0) {
-          await calculateRates(loadedAnimals[0].id, destLat, destLng, '', loadedAnimals);
+          await calculateRates(loadedAnimals[0].id, destLat, destLng, initialVoucherCode || '', loadedAnimals);
+          if (initialVoucherCode) {
+            handleApplyVoucher(initialVoucherCode, effectiveBase);
+          }
         }
       } catch (err) {
         console.warn('Init checkout error:', err);
@@ -208,39 +218,54 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
     );
   };
 
-  const calculateRates = async (targetAnimalId, lat, lng, vCode, animalsList = animals) => {
+  const calculateRates = async (targetAnimalId, lat, lng, vCode, animalsList = animals, activeVoucherOverride = undefined) => {
     if (!targetAnimalId) return;
     try {
+      const sumBasePrice = animalsList.reduce((acc, a) => acc + parseFloat(a.price || 0), 0);
       const res = await api.post('/orders/estimate', {
         animal_id: targetAnimalId,
         dest_lat: lat,
         dest_lng: lng,
-        voucher_code: vCode
+        voucher_code: vCode || '',
+        total_amount: sumBasePrice
       });
       if (res.success && res.data) {
         const rawEstimate = res.data;
-        // If multiple animals, sum base prices and adjust shipping
-        const multiplier = animalsList.length > 1 ? animalsList.length : 1;
-        const sumBasePrice = animalsList.reduce((acc, a) => acc + parseFloat(a.price || 0), 0) || rawEstimate.base_price;
+        const sumBase = sumBasePrice || rawEstimate.base_price;
 
         let finalShipping = rawEstimate.shipping_fee;
         if (expeditionType === 'SELF_PICKUP') {
           finalShipping = 0;
         } else if (expeditionType === 'CARGO_EXPEDITION') {
-          // 3rd-party cargo flat rate per kg based on weight
           const totalWeight = animalsList.reduce((acc, a) => acc + parseFloat(a.weight_kg || 50), 0);
           finalShipping = Math.max(65000, Math.round(totalWeight * 2200));
         } else {
-          // GoTernak internal courier
           finalShipping = rawEstimate.shipping_fee;
         }
 
-        const grand = Math.max(0, sumBasePrice - rawEstimate.store_discount - rawEstimate.admin_discount + finalShipping - rawEstimate.shipping_subsidy + rawEstimate.service_fee);
+        // Determine active voucher: if vCode is empty, voucher is removed (null)!
+        const currentVoucher = activeVoucherOverride !== undefined
+          ? activeVoucherOverride
+          : (vCode ? appliedVoucher : null);
+
+        const disc = currentVoucher
+          ? parseFloat(currentVoucher.calculated_discount || currentVoucher.discount_amount || currentVoucher.discount_value || 0)
+          : (vCode ? rawEstimate.admin_discount : 0);
+
+        const subsidy = currentVoucher?.is_shipping_subsidy
+          ? Math.min(disc, finalShipping)
+          : (vCode ? rawEstimate.shipping_subsidy : 0);
+
+        const adminDisc = !currentVoucher?.is_shipping_subsidy ? disc : 0;
+        const grand = Math.max(0, sumBase - rawEstimate.store_discount - adminDisc + finalShipping - subsidy + rawEstimate.service_fee);
 
         setEstimate({
           ...rawEstimate,
-          base_price: sumBasePrice,
+          base_price: sumBase,
+          original_goternak_fee: rawEstimate.shipping_fee,
           shipping_fee: finalShipping,
+          admin_discount: adminDisc,
+          shipping_subsidy: subsidy,
           grand_total: grand
         });
       }
@@ -249,24 +274,78 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
     }
   };
 
-  // Re-calculate when expedition type changes
-  useEffect(() => {
-    if (animals.length > 0) {
-      calculateRates(animals[0].id, destLat, destLng, voucherCode, animals);
-    }
-  }, [expeditionType]);
+  // Synchronously and completely remove active coupon & restore original grand total
+  const handleRemoveVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherCode('');
+    setVoucherError('');
+    setEstimate(prev => {
+      const grand = Math.max(0, prev.base_price - (prev.store_discount || 0) + prev.shipping_fee + (prev.service_fee || 0));
+      return {
+        ...prev,
+        admin_discount: 0,
+        shipping_subsidy: 0,
+        grand_total: grand
+      };
+    });
+  };
 
-  const handleApplyVoucher = async () => {
-    if (!voucherCode.trim()) return;
+  // Immediate synchronous calculation when expedition option is selected
+  const handleSelectExpedition = (type) => {
+    setExpeditionType(type);
+    const sumBase = estimate.base_price || animals.reduce((acc, a) => acc + parseFloat(a.price || 0), 0);
+    let newShipping = 0;
+    if (type === 'GOTERNAK') {
+      const baseFee = shippingSettings?.goternak_base_fee || 20000;
+      const perKm = shippingSettings?.goternak_per_km_fee || 4000;
+      newShipping = estimate.original_goternak_fee || (baseFee + perKm * (estimate.distance_km || 15));
+    } else if (type === 'CARGO_EXPEDITION') {
+      const totalWeight = animals.reduce((acc, a) => acc + parseFloat(a.weight_kg || 50), 0);
+      newShipping = Math.max(65000, Math.round(totalWeight * 2200));
+    } else {
+      newShipping = 0; // SELF_PICKUP
+    }
+
+    const adminDisc = estimate.admin_discount || 0;
+    const storeDisc = estimate.store_discount || 0;
+    const subsidy = (type === 'GOTERNAK' && estimate.shipping_subsidy) ? estimate.shipping_subsidy : 0;
+    const sFee = estimate.service_fee || 35000;
+    const grand = Math.max(0, sumBase - storeDisc - adminDisc + newShipping - subsidy + sFee);
+
+    setEstimate(prev => ({
+      ...prev,
+      shipping_fee: newShipping,
+      grand_total: grand
+    }));
+  };
+
+  const handleApplyVoucher = async (codeToUse, explicitAmount) => {
+    const code = (typeof codeToUse === 'string' ? codeToUse : voucherCode || '').trim().toUpperCase();
+    if (!code) return;
     setVoucherError('');
     try {
+      const calcAmount = explicitAmount || estimate.base_price || animals.reduce((acc, a) => acc + parseFloat(a.price || 0), 0);
       const res = await api.post('/vouchers/check', {
-        code: voucherCode,
-        amount: estimate.base_price
+        code: code,
+        amount: calcAmount
       });
       if (res.success && res.data) {
-        setAppliedVoucher(res.data);
-        await calculateRates(animals[0]?.id, destLat, destLng, voucherCode, animals);
+        const vch = res.data;
+        setAppliedVoucher(vch);
+        setVoucherCode(code);
+        const discountNominal = parseFloat(vch.calculated_discount || vch.discount_amount || vch.discount_value || 0);
+
+        setEstimate(prev => {
+          const subsidy = vch.is_shipping_subsidy ? Math.min(discountNominal, prev.shipping_fee) : (prev.shipping_subsidy || 0);
+          const adminDisc = !vch.is_shipping_subsidy ? discountNominal : (prev.admin_discount || 0);
+          const grand = Math.max(0, prev.base_price - prev.store_discount - adminDisc + prev.shipping_fee - subsidy + prev.service_fee);
+          return {
+            ...prev,
+            admin_discount: adminDisc,
+            shipping_subsidy: subsidy,
+            grand_total: grand
+          };
+        });
       }
     } catch (err) {
       setVoucherError(err.message || 'Kupon tidak dapat digunakan.');
@@ -412,14 +491,14 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
               <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-theme-primary" /> Alamat & Titik Koordinat (Tikor) Pengiriman
               </h2>
-              <button
+              {/* <button
                 type="button"
                 onClick={() => setIsAddressModalOpen(true)}
                 className="text-xs font-bold text-theme-primary hover:text-theme-primary-hover flex items-center gap-1 bg-theme-primary-light/30 px-3 py-1.5 rounded-xl transition"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Tambah Alamat Baru</span>
-              </button>
+              </button> */}
             </div>
 
             {/* Saved addresses selector */}
@@ -435,11 +514,10 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                       <div
                         key={addr.id}
                         onClick={() => handleSelectAddress(addr)}
-                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
-                          isSelected
+                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${isSelected
                             ? 'border-theme-primary bg-theme-primary-light/20 ring-2 ring-theme-primary/20 shadow-sm'
                             : 'border-theme-border bg-theme-bg/60 hover:border-theme-primary/40'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5">
@@ -488,51 +566,77 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                 />
               </div>
 
-              {/* Google Maps Link / Geolocation */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-theme-muted">
-                    Link Google Maps atau Titik Koordinat (Tikor)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleDetectGPS}
-                    className="text-[11px] text-theme-primary hover:underline font-bold flex items-center gap-1"
-                  >
-                    <LocateFixed className="w-3.5 h-3.5" />
-                    <span>Deteksi GPS Saya</span>
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={mapsUrl}
-                    onChange={(e) => handleMapsUrlChange(e.target.value)}
-                    placeholder="https://maps.app.goo.gl/..."
-                    className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text pr-10 focus:outline-none focus:ring-2 focus:ring-theme-primary/30"
-                  />
-                  {mapsUrl && (
-                    <a
-                      href={mapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute right-3 top-2.5 text-theme-muted hover:text-theme-primary"
-                      title="Buka link di tab baru"
+              {/* Peta Lokasi Pengiriman Sesuai Alamat Form */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-theme-primary" />
+                    <label className="text-xs font-bold text-theme-text">
+                      Peta Lokasi Pengiriman (Otomatis Sesuai Alamat)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDetectGPS}
+                      className="text-[11px] text-theme-primary hover:underline font-bold flex items-center gap-1 cursor-pointer"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
+                      <LocateFixed className="w-3.5 h-3.5" />
+                      <span>Deteksi GPS Saya</span>
+                    </button>
+                    {deliveryAddress && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(deliveryAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-theme-muted hover:text-theme-primary flex items-center gap-1"
+                        title="Buka di Google Maps"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Buka Maps</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Live Embedded Map Matching Address */}
+                <div className="relative rounded-2xl overflow-hidden border border-theme-border bg-theme-bg shadow-inner h-52 sm:h-60 w-full">
+                  {deliveryAddress?.trim() ? (
+                    <iframe
+                      title="Peta Lokasi Pengiriman"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      scrolling="no"
+                      marginHeight="0"
+                      marginWidth="0"
+                      loading="lazy"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(deliveryAddress)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                      className="w-full h-full border-0"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-theme-muted space-y-2">
+                      <MapPin className="w-8 h-8 text-theme-muted/50 animate-bounce" />
+                      <p className="text-xs font-semibold">Ketik alamat lengkap di atas untuk memuat peta lokasi pengiriman.</p>
+                    </div>
                   )}
                 </div>
-                {gpsStatus && (
-                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mt-1">
-                    {gpsStatus}
-                  </p>
-                )}
+
+                <div className="flex items-center justify-between text-[11px] text-theme-muted pt-0.5">
+                  <span className="truncate">
+                    Tikor Presisi: {(parseFloat(destLat) || -6.2415).toFixed(4)}, {(parseFloat(destLng) || 106.8532).toFixed(4)}
+                  </span>
+                  {gpsStatus && (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold truncate">
+                      {gpsStatus}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* INTERACTIVE DELIVERY SELECTION CARDS */}
+          {/* INTERACTIVE DELIVERY SELECTION CARDS (Mobile-First & Instant Adjustment) */}
           <div className="bg-theme-card border border-theme-border rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -551,14 +655,13 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
             <div className="space-y-3 pt-1">
               {/* CARD 1: GoTernak Kurir Khusus Hewan Ternak */}
               <div
-                onClick={() => setExpeditionType('GOTERNAK')}
-                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${
-                  expeditionType === 'GOTERNAK'
+                onClick={() => handleSelectExpedition('GOTERNAK')}
+                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${expeditionType === 'GOTERNAK'
                     ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-500/30 shadow-md'
                     : 'border-theme-border bg-theme-bg/60 hover:border-emerald-500/50'
-                }`}
+                  }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
                       <Truck className="w-5 h-5" />
@@ -587,9 +690,9 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-left sm:text-right flex-shrink-0 pl-13 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-theme-border/40">
                     <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                      {formatRupiah(expeditionType === 'GOTERNAK' ? estimate.shipping_fee : (shippingSettings?.goternak_base_fee || 20000) + ((shippingSettings?.goternak_per_km_fee || 4000) * (estimate.distance_km || 15)))}
+                      {formatRupiah(estimate.original_goternak_fee || estimate.shipping_fee || ((shippingSettings?.goternak_base_fee || 20000) + ((shippingSettings?.goternak_per_km_fee || 4000) * (estimate.distance_km || 15))))}
                     </div>
                     <div className="text-[10px] text-theme-muted mt-0.5">
                       Formula Rp {(shippingSettings?.goternak_per_km_fee || 4000).toLocaleString('id-ID')}/km
@@ -600,14 +703,13 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
 
               {/* CARD 2: Kargo Logistik Pihak Ketiga */}
               <div
-                onClick={() => setExpeditionType('CARGO_EXPEDITION')}
-                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${
-                  expeditionType === 'CARGO_EXPEDITION'
+                onClick={() => handleSelectExpedition('CARGO_EXPEDITION')}
+                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${expeditionType === 'CARGO_EXPEDITION'
                     ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 ring-2 ring-blue-500/30 shadow-md'
                     : 'border-theme-border bg-theme-bg/60 hover:border-blue-500/50'
-                }`}
+                  }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
                       <Package className="w-5 h-5" />
@@ -624,7 +726,7 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                       </p>
 
                       {/* Courier Selection Pills */}
-                      <div className="flex items-center gap-2 mt-3">
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
                         {['JNE Trucking (JTR)', 'SiCepat Gokil', 'Kalog Express'].map((courier) => (
                           <button
                             key={courier}
@@ -632,13 +734,12 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedCourier(courier);
-                              setExpeditionType('CARGO_EXPEDITION');
+                              handleSelectExpedition('CARGO_EXPEDITION');
                             }}
-                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
-                              selectedCourier === courier && expeditionType === 'CARGO_EXPEDITION'
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${selectedCourier === courier && expeditionType === 'CARGO_EXPEDITION'
                                 ? 'bg-blue-600 text-white shadow-sm'
                                 : 'bg-theme-border/50 text-theme-muted hover:text-theme-text'
-                            }`}
+                              }`}
                           >
                             {courier}
                           </button>
@@ -654,9 +755,9 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-left sm:text-right flex-shrink-0 pl-13 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-theme-border/40">
                     <div className="text-base font-black text-blue-600 dark:text-blue-400">
-                      {formatRupiah(expeditionType === 'CARGO_EXPEDITION' ? estimate.shipping_fee : Math.max(65000, Math.round((animals[0]?.weight_kg || 40) * 2200)))}
+                      {formatRupiah(Math.max(65000, Math.round((animals.reduce((acc, a) => acc + parseFloat(a.weight_kg || 50), 0)) * 2200)))}
                     </div>
                     <div className="text-[10px] text-theme-muted mt-0.5">
                       Tarif Terintegrasi API
@@ -667,14 +768,13 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
 
               {/* CARD 3: Ambil di Kandang (Self Pickup) */}
               <div
-                onClick={() => setExpeditionType('SELF_PICKUP')}
-                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${
-                  expeditionType === 'SELF_PICKUP'
+                onClick={() => handleSelectExpedition('SELF_PICKUP')}
+                className={`p-4 rounded-3xl border cursor-pointer transition-all relative overflow-hidden ${expeditionType === 'SELF_PICKUP'
                     ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/20 ring-2 ring-amber-500/30 shadow-md'
                     : 'border-theme-border bg-theme-bg/60 hover:border-amber-500/50'
-                }`}
+                  }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm mt-0.5">
                       <CheckCircle2 className="w-5 h-5" />
@@ -699,7 +799,7 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-left sm:text-right flex-shrink-0 pl-13 sm:pl-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-theme-border/40">
                     <div className="text-base font-black text-amber-600 dark:text-amber-400">
                       GRATIS (Rp 0)
                     </div>
@@ -712,6 +812,73 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
             </div>
           </div>
 
+          {/* DEDICATED PROMO VOUCHER CARD (Prominent on Mobile & Desktop) */}
+          <div className="bg-theme-card border border-theme-border rounded-3xl p-5 sm:p-6 space-y-3.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
+                <Tag className="w-4 h-4 text-theme-primary" /> Kupon Promo & Diskon Belanja
+              </h2>
+              <span className="text-[10px] font-extrabold text-amber-600 bg-amber-500/15 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                Hemat s/d 15%
+              </span>
+            </div>
+
+            {/* Quick Coupon Chips */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-theme-muted">Rekomendasi kupon:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setVoucherCode('QURBANBERKAH');
+                  handleApplyVoucher('QURBANBERKAH');
+                }}
+                className="px-2.5 py-1 rounded-xl bg-theme-primary/10 hover:bg-theme-primary/20 border border-theme-primary/30 text-theme-primary font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>QURBANBERKAH (15% OFF)</span>
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Ketik kode kupon (cth: QURBANBERKAH)"
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                className="flex-1 bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-theme-primary/30"
+              />
+              <button
+                type="button"
+                onClick={() => handleApplyVoucher(voucherCode)}
+                className="px-5 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95"
+              >
+                Gunakan Kupon
+              </button>
+            </div>
+
+            {appliedVoucher && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                    Kupon <strong>{appliedVoucher.voucher_code}</strong> aktif! Potongan: -{formatRupiah(appliedVoucher.calculated_discount || appliedVoucher.discount_amount || appliedVoucher.discount_value || estimate.admin_discount || 0)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveVoucher}
+                  className="text-xs text-rose-500 hover:underline font-bold flex-shrink-0 cursor-pointer"
+                >
+                  Batal
+                </button>
+              </div>
+            )}
+
+            {voucherError && (
+              <p className="text-xs text-rose-500 font-semibold">{voucherError}</p>
+            )}
+          </div>
+
           {/* Payment Method Selector */}
           <div className="bg-theme-card border border-theme-border rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
             <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
@@ -722,11 +889,10 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
               <button
                 type="button"
                 onClick={() => setPaymentMethod('MANUAL_TRANSFER')}
-                className={`p-4 rounded-2xl border text-left transition-all ${
-                  paymentMethod === 'MANUAL_TRANSFER'
+                className={`p-4 rounded-2xl border text-left transition-all ${paymentMethod === 'MANUAL_TRANSFER'
                     ? 'border-theme-primary bg-theme-primary-light/30 ring-2 ring-theme-primary/20'
                     : 'border-theme-border bg-theme-bg hover:bg-theme-border/30'
-                }`}
+                  }`}
               >
                 <div className="font-bold text-xs text-theme-text flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-theme-primary" />
@@ -740,11 +906,10 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
               <button
                 type="button"
                 onClick={() => setPaymentMethod('GATEWAY')}
-                className={`p-4 rounded-2xl border text-left transition-all ${
-                  paymentMethod === 'GATEWAY'
+                className={`p-4 rounded-2xl border text-left transition-all ${paymentMethod === 'GATEWAY'
                     ? 'border-theme-primary bg-theme-primary-light/30 ring-2 ring-theme-primary/20'
                     : 'border-theme-border bg-theme-bg hover:bg-theme-border/30'
-                }`}
+                  }`}
               >
                 <div className="font-bold text-xs text-theme-text flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-emerald-600" />
@@ -768,11 +933,10 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                       key={b.code}
                       type="button"
                       onClick={() => setSelectedBank(b.code)}
-                      className={`p-2.5 rounded-xl border text-center transition-all ${
-                        selectedBank === b.code
+                      className={`p-2.5 rounded-xl border text-center transition-all ${selectedBank === b.code
                           ? 'border-theme-primary bg-theme-primary-light text-theme-primary font-black shadow-sm'
                           : 'border-theme-border bg-theme-bg text-theme-muted hover:border-theme-text'
-                      }`}
+                        }`}
                     >
                       <span className="text-[11px] block truncate">{b.name}</span>
                     </button>
@@ -820,7 +984,7 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
                   <label className="text-xs font-semibold text-theme-muted block">
                     Upload Bukti Transfer (Struk / Tangkapan Layar / PDF):
                   </label>
-                  
+
                   <div className="p-4 rounded-2xl border-2 border-dashed border-theme-border bg-theme-bg/50 hover:bg-theme-bg transition-colors flex flex-col items-center justify-center text-center">
                     <input
                       type="file"
@@ -916,23 +1080,32 @@ export default function CheckoutPage({ animalId, animalIds = [], onNavigate }) {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Kode voucher (cth: BERKAHQURBAN)"
+                  placeholder="Kode voucher (cth: QURBANBERKAH)"
                   value={voucherCode}
                   onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
                   className="flex-1 bg-theme-bg border border-theme-border rounded-xl px-3 py-2 text-xs text-theme-text uppercase font-mono"
                 />
                 <button
                   type="button"
-                  onClick={handleApplyVoucher}
-                  className="px-4 py-2 bg-theme-bg border border-theme-border hover:bg-theme-border/50 text-xs font-bold rounded-xl transition-colors"
+                  onClick={() => handleApplyVoucher(voucherCode)}
+                  className="px-4 py-2 bg-theme-primary text-white hover:bg-theme-primary-hover text-xs font-bold rounded-xl transition-colors"
                 >
                   Terapkan
                 </button>
               </div>
               {appliedVoucher && (
-                <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Kupon {appliedVoucher.voucher_code} aktif! Diskon {formatRupiah(appliedVoucher.discount_amount)}</span>
+                <div className="text-[11px] text-emerald-600 font-semibold flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>Kupon {appliedVoucher.voucher_code} aktif! Diskon -{formatRupiah(appliedVoucher.calculated_discount || appliedVoucher.discount_amount || appliedVoucher.discount_value || estimate.admin_discount || 0)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveVoucher}
+                    className="text-rose-500 hover:underline text-[10px] font-bold cursor-pointer"
+                  >
+                    Hapus
+                  </button>
                 </div>
               )}
               {voucherError && (

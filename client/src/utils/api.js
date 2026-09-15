@@ -3,10 +3,14 @@ const API_BASE = '/api/v1';
 
 function getActiveToken() {
   const isAdminPath = typeof window !== 'undefined' && window.location.pathname.toLowerCase().startsWith('/admin');
-  if (isAdminPath) {
-    return localStorage.getItem('ternakmart_admin_token');
+  const token = isAdminPath
+    ? (typeof localStorage !== 'undefined' && localStorage.getItem('ternakmart_admin_token'))
+    : (typeof localStorage !== 'undefined' && localStorage.getItem('ternakmart_token'));
+
+  if (!token || token === 'null' || token === 'undefined' || typeof token !== 'string' || token.trim() === '') {
+    return null;
   }
-  return localStorage.getItem('ternakmart_token');
+  return token.trim();
 }
 
 async function request(endpoint, options = {}) {
@@ -15,8 +19,10 @@ async function request(endpoint, options = {}) {
     ...(options.headers || {})
   };
 
-  if (token && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const validToken = (token && token !== 'null' && token !== 'undefined' && typeof token === 'string' && token.trim() !== '') ? token.trim() : null;
+
+  if (validToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${validToken}`;
   }
 
   if (!(options.body instanceof FormData) && !headers['Content-Type']) {

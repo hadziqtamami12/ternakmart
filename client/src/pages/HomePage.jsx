@@ -155,19 +155,19 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
     try {
       setLoading(true);
       const [animalsRes, storesRes, reviewsRes, heroRes] = await Promise.all([
-        api.get('/animals?limit=12'),
-        api.get('/stores'),
-        api.get('/reviews'),
+        api.get('/animals?limit=12').catch(() => ({ success: false, data: [] })),
+        api.get('/stores').catch(() => ({ success: false, data: [] })),
+        api.get('/reviews').catch(() => ({ success: false, data: [] })),
         api.get('/hero-banners').catch(() => ({ success: false, data: [] }))
       ]);
 
-      if (animalsRes.success && animalsRes.data) {
+      if (animalsRes && animalsRes.success && animalsRes.data) {
         setAnimals(animalsRes.data);
       }
-      if (storesRes.success && storesRes.data) {
+      if (storesRes && storesRes.success && storesRes.data) {
         setStores(storesRes.data);
       }
-      if (reviewsRes.success && reviewsRes.data) {
+      if (reviewsRes && reviewsRes.success && reviewsRes.data) {
         setReviews(reviewsRes.data);
       }
       if (heroRes && heroRes.success && Array.isArray(heroRes.data) && heroRes.data.length > 0) {
@@ -274,9 +274,9 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
 
   return (
     <div className="space-y-8 sm:space-y-12 overflow-x-hidden w-full max-w-full">
-      {/* Added to Cart Notification Toast (Centered Floating Bar) */}
+      {/* Added to Cart Notification Toast (Centered Floating Bar for All Resolutions) */}
       {addedToast && (
-        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-50 max-w-sm sm:max-w-md w-[calc(100%-2rem)] sm:w-auto bg-theme-card/95 backdrop-blur-md border border-theme-primary/40 text-theme-text px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-top duration-200">
+        <div className="fixed top-4 sm:top-6 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 z-[99999] max-w-sm sm:max-w-md mx-auto bg-theme-card/95 backdrop-blur-md border border-theme-primary/40 text-theme-text px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-top duration-200">
           <div className="flex items-center gap-2.5 min-w-0">
             <CheckCircle2 className="w-5 h-5 text-theme-primary flex-shrink-0" />
             <span className="text-xs font-bold truncate">{addedToast}</span>
@@ -339,7 +339,8 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
                   {promoBanners[bannerIndex].categoryBadge}
                 </span>
 
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-400/30 text-amber-300 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-md">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-500/25 border border-amber-400/30 text-amber-300 text-[10px] sm:text-xs font-bold tracking-wider backdrop-blur-md shadow-sm">
+                  <Tag className="w-3 h-3 mr-1 text-amber-400" />
                   {promoBanners[bannerIndex].tag}
                 </span>
               </div>
@@ -936,8 +937,11 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
         </div>
       </section>
 
-      {/* Homepage Special Event / Promo Modal Popup */}
-      <PromoEventModal config={config} onNavigate={onNavigate} />
+      {/* Homepage Special Event / Promo Modal Popup (Muncul otomatis saat aktif baik di mobile maupun desktop) */}
+      <PromoEventModal
+        config={config}
+        onNavigate={onNavigate}
+      />
 
       {/* Clean, Balanced Responsive Footer */}
       <Footer onNavigate={onNavigate} />

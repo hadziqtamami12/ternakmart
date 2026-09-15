@@ -151,9 +151,21 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'Pengguna tamu (belum terautentikasi).'
+      });
+    }
+
     const user = await db.findById('users', req.user.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
+      return res.json({
+        success: true,
+        data: null,
+        message: 'Sesi pengguna tidak ditemukan atau telah kedaluwarsa.'
+      });
     }
 
     const { password_hash: _, ...safeUser } = user;

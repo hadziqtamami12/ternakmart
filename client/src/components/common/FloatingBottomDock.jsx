@@ -58,7 +58,27 @@ export default function FloatingBottomDock({ currentPage, onNavigate }) {
   const cartCtx = useCart();
   const cartCount = cartCtx?.count || 0;
 
-  // Always permanently visible at the very bottom of the mobile screen
+  // Di halaman beranda, bottom nav disembunyikan saat di posisi paling atas dan muncul ketika pengguna mulai scroll ke bawah.
+  // Di halaman lainnya (katalog, keranjang, chat, profil, dll.), bottom nav selalu tampil.
+  const [isVisible, setIsVisible] = useState(currentPage !== 'home');
+
+  useEffect(() => {
+    if (currentPage !== 'home') {
+      setIsVisible(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollPos = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      setIsVisible(scrollPos > 40);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentPage]);
+
+  // Map subpages to their parent bottom navigation tab
   const isHomeActive = currentPage === 'home';
   const isCatalogActive = currentPage === 'catalog' || currentPage === 'animal-detail';
   const isCartActive = currentPage === 'cart' || currentPage === 'checkout';
@@ -73,7 +93,9 @@ export default function FloatingBottomDock({ currentPage, onNavigate }) {
 
   return (
     <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-[1100] border-t border-theme-border shadow-[0_-4px_20px_rgba(0,0,0,0.12)]"
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-[1100] border-t border-theme-border shadow-[0_-4px_20px_rgba(0,0,0,0.12)] transition-all duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'
+      }`}
       style={{
         backgroundColor: 'var(--color-card, #ffffff)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)'

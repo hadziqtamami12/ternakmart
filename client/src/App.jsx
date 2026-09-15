@@ -76,7 +76,7 @@ function getPathForPage(page, params = {}) {
 }
 
 function AppContent() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated = false, user = null } = useAuth() || {};
   const [currentPage, setCurrentPage] = useState(() => parseUrlPath());
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [activeTrackingOrderId, setActiveTrackingOrderId] = useState('ord_demo_001');
@@ -84,6 +84,7 @@ function AppContent() {
   const [chatAnimalContext, setChatAnimalContext] = useState(null);
   const [checkoutAnimalId, setCheckoutAnimalId] = useState(null);
   const [checkoutAnimalIds, setCheckoutAnimalIds] = useState([]);
+  const [checkoutVoucherCode, setCheckoutVoucherCode] = useState('');
   const [catalogInitialCategory, setCatalogInitialCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -118,6 +119,7 @@ function AppContent() {
     if (params.category) setCatalogInitialCategory(params.category);
     if (params.animalId) setCheckoutAnimalId(params.animalId);
     if (params.animalIds) setCheckoutAnimalIds(params.animalIds);
+    if (params.voucherCode !== undefined) setCheckoutVoucherCode(params.voucherCode);
     if (params.newOrderId) setActiveTrackingOrderId(params.newOrderId);
 
     const path = getPathForPage(targetPage, params);
@@ -213,6 +215,7 @@ function AppContent() {
           <CheckoutPage
             animalId={checkoutAnimalId || selectedAnimal?.id}
             animalIds={checkoutAnimalIds}
+            voucherCode={checkoutVoucherCode}
             onNavigate={navigateTo}
           />
         )}

@@ -61,7 +61,8 @@ exports.checkVoucher = async (req, res) => {
       message: 'Kupon berhasil diterapkan!',
       data: {
         ...vch,
-        calculated_discount: discountNominal
+        calculated_discount: discountNominal,
+        discount_amount: discountNominal
       }
     });
   } catch (err) {

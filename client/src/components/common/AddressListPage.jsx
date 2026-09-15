@@ -404,7 +404,7 @@ export default function AddressListPage({ onBack, onNavigate }) {
               <label className="font-bold text-theme-text block mb-1.5 flex items-center justify-between">
                 <span>Pilih Titik Presisi di Peta (Tikor GPS)</span>
                 <span className="font-mono text-[10px] text-theme-muted font-normal">
-                  {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                  {Number(latitude || -6.2).toFixed(5)}, {Number(longitude || 106.8).toFixed(5)}
                 </span>
               </label>
 

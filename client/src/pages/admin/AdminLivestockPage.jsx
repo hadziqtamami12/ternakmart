@@ -19,6 +19,7 @@ import {
 import { api } from '../../utils/api';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
 import DataTable from '../../components/common/DataTable';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 
 export default function AdminLivestockPage() {
   const [animals, setAnimals] = useState([]);
@@ -106,11 +107,12 @@ export default function AdminLivestockPage() {
       const res = await api.delete(`/animals/${animal.id}`);
       if (res.success) {
         setAnimals(prev => prev.filter(a => a.id !== animal.id));
+        notifyAdminSuccess(`Ternak '${animal.title}' berhasil dihapus.`);
         setSuccessMsg(`✓ Ternak '${animal.title}' berhasil dihapus.`);
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal menghapus ternak.');
+      notifyAdminError(err.message || 'Gagal menghapus ternak.');
     }
   };
 
@@ -137,6 +139,7 @@ export default function AdminLivestockPage() {
         const res = await api.put(`/animals/${editingAnimal.id}`, payload);
         if (res.success) {
           setIsFormOpen(false);
+          notifyAdminSuccess(`Ternak '${formData.title}' berhasil diperbarui!`);
           setSuccessMsg(`✓ Ternak '${formData.title}' berhasil diperbarui!`);
           fetchAnimals();
           setTimeout(() => setSuccessMsg(''), 3000);
@@ -145,12 +148,14 @@ export default function AdminLivestockPage() {
         const res = await api.post('/animals', payload);
         if (res.success) {
           setIsFormOpen(false);
+          notifyAdminSuccess(`Ternak baru '${formData.title}' berhasil ditambahkan!`);
           setSuccessMsg(`✓ Ternak baru '${formData.title}' berhasil ditambahkan!`);
           fetchAnimals();
           setTimeout(() => setSuccessMsg(''), 3000);
         }
       }
     } catch (err) {
+      notifyAdminError(err.message || 'Gagal menyimpan data hewan ternak.');
       setFormError(err.message || 'Gagal menyimpan data hewan ternak.');
     } finally {
       setSaving(false);

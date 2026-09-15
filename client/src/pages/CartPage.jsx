@@ -11,8 +11,12 @@ import {
   CheckSquare,
   Square,
   Layers,
-  Zap
+  Zap,
+  Tag,
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
+import { api } from '../utils/api';
 import { useCart } from '../context/CartContext';
 import { formatRupiah, formatWeight } from '../utils/formatters';
 import { CartSkeleton } from '../components/common/Skeletons';
@@ -27,6 +31,12 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
   // Mode: regular (direct buy per item) vs bulk (multi-selection)
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
+
+  // Coupon / Voucher state
+  const [cartVoucherCode, setCartVoucherCode] = useState('');
+  const [cartAppliedVoucher, setCartAppliedVoucher] = useState(null);
+  const [cartVoucherError, setCartVoucherError] = useState('');
+  const [cartVoucherLoading, setCartVoucherLoading] = useState(false);
 
   // Long press timer ref
   const pressTimerRef = useRef(null);
@@ -68,13 +78,38 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
     }
   };
 
+  // Apply Coupon Handler
+  const handleApplyCartVoucher = async (codeOverride) => {
+    const code = (typeof codeOverride === 'string' ? codeOverride : cartVoucherCode || '').trim().toUpperCase();
+    if (!code) return;
+    setCartVoucherError('');
+    setCartVoucherLoading(true);
+    try {
+      const targetBase = selectedItems.reduce((sum, i) => sum + (parseFloat(i.price || 0) * (i.quantity || 1)), 0) ||
+        items.reduce((sum, i) => sum + (parseFloat(i.price || 0) * (i.quantity || 1)), 0);
+      const res = await api.post('/vouchers/check', {
+        code: code,
+        amount: targetBase
+      });
+      if (res.success && res.data) {
+        setCartAppliedVoucher(res.data);
+        setCartVoucherCode(code);
+      }
+    } catch (err) {
+      setCartVoucherError(err.message || 'Kupon tidak dapat digunakan.');
+      setCartAppliedVoucher(null);
+    } finally {
+      setCartVoucherLoading(false);
+    }
+  };
+
   // Direct checkout for a single animal
   const handleDirectCheckout = (animalId) => {
     if (!isAuthenticated) {
       sessionStorage.setItem('ternakmart_redirect_url', 'checkout');
-      onNavigate('auth', { redirect: 'checkout', animalId });
+      onNavigate('auth', { redirect: 'checkout', animalId, voucherCode: cartVoucherCode });
     } else {
-      onNavigate('checkout', { animalId, animalIds: [animalId] });
+      onNavigate('checkout', { animalId, animalIds: [animalId], voucherCode: cartVoucherCode });
     }
   };
 
@@ -83,9 +118,9 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
     if (selectedIds.length === 0) return;
     if (!isAuthenticated) {
       sessionStorage.setItem('ternakmart_redirect_url', 'checkout');
-      onNavigate('auth', { redirect: 'checkout', animalId: selectedIds[0], animalIds: selectedIds });
+      onNavigate('auth', { redirect: 'checkout', animalId: selectedIds[0], animalIds: selectedIds, voucherCode: cartVoucherCode });
     } else {
-      onNavigate('checkout', { animalId: selectedIds[0], animalIds: selectedIds });
+      onNavigate('checkout', { animalId: selectedIds[0], animalIds: selectedIds, voucherCode: cartVoucherCode });
     }
   };
 
@@ -392,6 +427,80 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
         ))}
       </div>
 
+      {/* Kupon Promo & Diskon Belanja in Cart */}
+      <div className="bg-theme-card border border-theme-border rounded-3xl p-4 sm:p-6 space-y-3.5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-theme-text flex items-center gap-2">
+            <Tag className="w-4 h-4 text-theme-primary" /> Kupon Promo & Diskon Belanja
+          </h2>
+          <span className="text-[10px] font-extrabold text-amber-600 bg-amber-500/15 px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Hemat s/d 15%
+          </span>
+        </div>
+
+        {/* Quick Recommendation Chips */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-theme-muted">Kupon Tersedia:</span>
+          <button
+            type="button"
+            onClick={() => {
+              setCartVoucherCode('QURBANBERKAH');
+              handleApplyCartVoucher('QURBANBERKAH');
+            }}
+            className="px-2.5 py-1 rounded-xl bg-theme-primary/10 hover:bg-theme-primary/20 border border-theme-primary/30 text-theme-primary font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>QURBANBERKAH (15% OFF)</span>
+          </button>
+        </div>
+
+        {/* Input & Apply Button */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Ketik kode kupon (cth: QURBANBERKAH)"
+            value={cartVoucherCode}
+            onChange={(e) => setCartVoucherCode(e.target.value.toUpperCase())}
+            className="flex-1 bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 text-xs text-theme-text uppercase font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-theme-primary/30"
+          />
+          <button
+            type="button"
+            disabled={cartVoucherLoading}
+            onClick={() => handleApplyCartVoucher(cartVoucherCode)}
+            className="px-5 py-2.5 bg-theme-primary hover:bg-theme-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50"
+          >
+            {cartVoucherLoading ? 'Memeriksa...' : 'Gunakan Kupon'}
+          </button>
+        </div>
+
+        {/* Applied Coupon Info */}
+        {cartAppliedVoucher && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between gap-2 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                Kupon <strong>{cartAppliedVoucher.voucher_code}</strong> aktif! Diskon:{' '}
+                -{formatRupiah(cartAppliedVoucher.calculated_discount || cartAppliedVoucher.discount_amount || cartAppliedVoucher.discount_value || 0)}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCartAppliedVoucher(null);
+                setCartVoucherCode('');
+              }}
+              className="text-xs text-rose-500 hover:underline font-bold flex-shrink-0"
+            >
+              Batal
+            </button>
+          </div>
+        )}
+
+        {cartVoucherError && (
+          <p className="text-xs text-rose-500 font-semibold">{cartVoucherError}</p>
+        )}
+      </div>
+
       {/* Sticky Bottom Bar */}
       <div className="fixed bottom-14 lg:bottom-0 left-0 right-0 z-40 bg-theme-card border-t border-theme-border shadow-elevated p-3 sm:p-4" style={{ backgroundColor: 'var(--color-card, #ffffff)' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
@@ -415,12 +524,28 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
             )}
 
             <div className="text-right">
-              <span className="text-base font-extrabold text-theme-primary block">
-                {formatRupiah(totalSelectedPrice)}
-              </span>
-              <span className="text-[10px] text-theme-muted block">
-                {totalSelectedCount} ekor {isBulkMode ? 'terpilih' : 'total'}
-              </span>
+              {cartAppliedVoucher ? (
+                <>
+                  <span className="text-[11px] text-theme-muted line-through block">
+                    {formatRupiah(totalSelectedPrice)}
+                  </span>
+                  <span className="text-base font-extrabold text-theme-primary block">
+                    {formatRupiah(Math.max(0, totalSelectedPrice - parseFloat(cartAppliedVoucher.calculated_discount || cartAppliedVoucher.discount_amount || cartAppliedVoucher.discount_value || 0)))}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">
+                    Hemat {formatRupiah(parseFloat(cartAppliedVoucher.calculated_discount || cartAppliedVoucher.discount_amount || cartAppliedVoucher.discount_value || 0))} ({totalSelectedCount} ekor)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-base font-extrabold text-theme-primary block">
+                    {formatRupiah(totalSelectedPrice)}
+                  </span>
+                  <span className="text-[10px] text-theme-muted block">
+                    {totalSelectedCount} ekor {isBulkMode ? 'terpilih' : 'total'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 

@@ -32,6 +32,8 @@ import { api } from '../../utils/api';
 import { useAppConfig } from '../../context/AppConfigContext';
 import { useTheme } from '../../context/ThemeContext';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
+import { LandingPageSkeleton } from '../../components/common/Skeletons';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 
 //* ─── Real Interactive Landing Page Theme Preview (Desktop & Mobile) ─── */
 function ThemePreview({ themeId, availableThemes }) {
@@ -42,10 +44,12 @@ function ThemePreview({ themeId, availableThemes }) {
     return 'desktop';
   });
   const [iframeKey, setIframeKey] = useState(0);
+  const [isThemeLoading, setIsThemeLoading] = useState(false);
   const iframeRef = useRef(null);
 
   // Send postMessage to iframe when themeId changes for instantaneous live preview
   useEffect(() => {
+    setIsThemeLoading(true);
     if (iframeRef.current && iframeRef.current.contentWindow) {
       iframeRef.current.contentWindow.postMessage(
         {
@@ -55,9 +59,14 @@ function ThemePreview({ themeId, availableThemes }) {
         '*'
       );
     }
+    const timer = setTimeout(() => {
+      setIsThemeLoading(false);
+    }, 450);
+    return () => clearTimeout(timer);
   }, [themeId]);
 
   const handleReload = () => {
+    setIsThemeLoading(true);
     setIframeKey(k => k + 1);
   };
 
@@ -153,12 +162,18 @@ function ThemePreview({ themeId, availableThemes }) {
             </div>
 
             {/* Desktop Iframe */}
-            <div className="w-full h-[640px] bg-white relative overflow-hidden">
+            <div className="w-full h-[640px] bg-theme-bg relative overflow-hidden">
+              {isThemeLoading && (
+                <div className="absolute inset-0 z-20 bg-theme-bg">
+                  <LandingPageSkeleton viewMode="desktop" />
+                </div>
+              )}
               <iframe
                 key={`desktop-${iframeKey}`}
                 ref={iframeRef}
                 src={`/?theme_preview=${themeId}`}
                 title="Interactive Desktop Theme Preview"
+                onLoad={() => setIsThemeLoading(false)}
                 className="w-full h-full border-0"
               />
             </div>
@@ -175,12 +190,18 @@ function ThemePreview({ themeId, availableThemes }) {
             </div>
 
             {/* Mobile Iframe */}
-            <div className="w-full h-[640px] bg-white relative overflow-hidden">
+            <div className="w-full h-[640px] bg-theme-bg relative overflow-hidden">
+              {isThemeLoading && (
+                <div className="absolute inset-0 z-20 bg-theme-bg">
+                  <LandingPageSkeleton viewMode="mobile" />
+                </div>
+              )}
               <iframe
                 key={`mobile-${iframeKey}`}
                 ref={iframeRef}
                 src={`/?theme_preview=${themeId}`}
                 title="Interactive Mobile Theme Preview"
+                onLoad={() => setIsThemeLoading(false)}
                 className="w-full h-full border-0"
               />
             </div>
@@ -199,6 +220,20 @@ function ThemePreview({ themeId, availableThemes }) {
 export default function BrandingSettingsPage({ onBack }) {
   const { config, setDocumentTitle, updatePlatformConfig } = useAppConfig();
   const { theme, switchTheme, availableThemes } = useTheme();
+
+  // Selected Theme state for admin customizer
+  const [selectedTheme, setSelectedTheme] = useState(() => config?.active_theme || theme || 'meadow-emerald');
+
+  useEffect(() => {
+    if (config?.active_theme) {
+      setSelectedTheme(config.active_theme);
+    }
+  }, [config?.active_theme]);
+
+  const handleSelectTheme = (tId) => {
+    setSelectedTheme(tId);
+    switchTheme(tId);
+  };
 
   // Branding inputs
   const [appName, setAppName] = useState(config?.app_name || 'Ternakmart');
@@ -274,7 +309,7 @@ export default function BrandingSettingsPage({ onBack }) {
         tagline,
         app_logo_url: logoUrl,
         app_favicon_url: faviconUrl,
-        active_theme: theme,
+        active_theme: selectedTheme,
         timezone_offset: timezoneOffset,
         shipping_rate_per_km: parseFloat(shippingRatePerKm),
         enable_api_expedition: enableApiExpedition,
@@ -288,8 +323,10 @@ export default function BrandingSettingsPage({ onBack }) {
       });
 
       setSaveSuccess(true);
+      notifyAdminSuccess('Pengaturan platform & tema berhasil disimpan!');
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
+      notifyAdminError(err.message || 'Gagal menyimpan konfigurasi.');
       setUploadError(err.message || 'Gagal menyimpan konfigurasi.');
     } finally {
       setSaving(false);
@@ -458,9 +495,9 @@ export default function BrandingSettingsPage({ onBack }) {
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => switchTheme(t.id)}
+                  onClick={() => handleSelectTheme(t.id)}
                   className={`relative rounded-2xl border-2 text-left transition-all overflow-hidden group cursor-pointer ${
-                    theme === t.id
+                    selectedTheme === t.id
                       ? 'border-theme-primary ring-2 ring-theme-primary/40 shadow-lg shadow-theme-primary/20'
                       : 'border-theme-border hover:border-theme-primary/50'
                   }`}
@@ -489,10 +526,10 @@ export default function BrandingSettingsPage({ onBack }) {
                   {/* Label */}
                   <div className="px-2.5 py-2 bg-theme-card border-t border-theme-border">
                     <div className="flex items-center justify-between">
-                      <span className={`text-[11px] font-bold ${theme === t.id ? 'text-theme-primary' : 'text-theme-text'}`}>
+                      <span className={`text-[11px] font-bold ${selectedTheme === t.id ? 'text-theme-primary' : 'text-theme-text'}`}>
                         {t.name}
                       </span>
-                      {theme === t.id && (
+                      {selectedTheme === t.id && (
                         <span className="w-4 h-4 rounded-full bg-theme-primary flex items-center justify-center">
                           <span className="text-[8px] text-white font-black">✓</span>
                         </span>
@@ -507,7 +544,7 @@ export default function BrandingSettingsPage({ onBack }) {
             {/* Live Preview Section (DI BAWAH Pilihan Tema) */}
             <div className="p-2.5 sm:p-4 rounded-2xl bg-theme-bg border border-theme-border space-y-3 animate-in fade-in mt-4 w-full max-w-full overflow-hidden">
               <label className="font-bold text-theme-text block text-xs">Live Preview Tema Landing Page</label>
-              <ThemePreview themeId={theme} availableThemes={availableThemes} />
+              <ThemePreview themeId={selectedTheme} availableThemes={availableThemes} />
               <p className="text-[10px] text-theme-muted">
                 Pratinjau langsung tema terpilih. Klik 'Simpan Semua Pengaturan' untuk menyimpan preferensi ini secara permanen.
               </p>

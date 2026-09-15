@@ -75,17 +75,20 @@ exports.calculateEstimate = async (req, res) => {
 
     // Check Voucher
     if (voucher_code) {
-      const vouchers = await db.findMany('vouchers', { voucher_code: voucher_code.toUpperCase() });
+      const vCode = voucher_code.trim().toUpperCase();
+      const vouchers = await db.findMany('vouchers', { voucher_code: vCode });
       if (vouchers.length > 0) {
         const vch = vouchers[0];
         const now = new Date().toISOString();
-        if (now >= vch.start_time && now <= vch.end_time && vch.used_count < vch.quota && base_price >= vch.min_purchase) {
+        const effectivePrice = req.body.total_amount ? parseFloat(req.body.total_amount) : base_price;
+        const minPurchase = parseFloat(vch.min_purchase || 0);
+        if (now >= vch.start_time && now <= vch.end_time && vch.used_count < vch.quota && effectivePrice >= minPurchase) {
           if (vch.is_shipping_subsidy) {
             shipping_subsidy = Math.min(parseFloat(vch.discount_value), shipping_fee);
           } else {
             if (vch.discount_type === 'PERCENT') {
-              const calc = (base_price * parseFloat(vch.discount_value)) / 100;
-              admin_discount = vch.max_discount_cap ? Math.min(calc, vch.max_discount_cap) : calc;
+              const calc = (effectivePrice * parseFloat(vch.discount_value)) / 100;
+              admin_discount = vch.max_discount_cap ? Math.min(calc, parseFloat(vch.max_discount_cap)) : calc;
             } else {
               admin_discount = parseFloat(vch.discount_value);
             }

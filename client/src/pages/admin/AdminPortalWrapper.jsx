@@ -92,6 +92,27 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
     }
   };
 
+  /* Admin Pop Notif / Alert State (Universal for all admin CRUD) */
+  const [adminAlert, setAdminAlert] = useState(null);
+
+  useEffect(() => {
+    const handleAlertEvent = (e) => {
+      if (e.detail) {
+        setAdminAlert(e.detail);
+        setTimeout(() => setAdminAlert(null), 3500);
+      }
+    };
+    window.addEventListener('ternakmart_admin_alert', handleAlertEvent);
+    window.showAdminAlert = (detail) => {
+      setAdminAlert(detail);
+      setTimeout(() => setAdminAlert(null), 3500);
+    };
+    return () => {
+      window.removeEventListener('ternakmart_admin_alert', handleAlertEvent);
+      delete window.showAdminAlert;
+    };
+  }, []);
+
   /* Isolate admin from marketplace theme */
   useEffect(() => {
     enterAdminMode();
@@ -638,6 +659,38 @@ export default function AdminPortalWrapper({ onNavigateHome }) {
           </div>
         </main>
       </div>
+
+      {/* Universal Responsive Admin Alert / Pop Notif (Mobile & Desktop) */}
+      {adminAlert && (
+        <div className="fixed top-4 left-4 right-4 sm:top-5 sm:right-6 sm:left-auto sm:max-w-md z-[99999] animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className={`p-4 rounded-2xl shadow-2xl border flex items-center justify-between gap-3 ${
+            adminAlert.type === 'error'
+              ? 'bg-rose-950/95 border-rose-500/50 text-white'
+              : adminAlert.type === 'warning'
+              ? 'bg-amber-950/95 border-amber-500/50 text-white'
+              : 'bg-emerald-950/95 border-emerald-500/50 text-white'
+          } backdrop-blur-md`}>
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-black shadow-sm ${
+                adminAlert.type === 'error' ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
+              }`}>
+                {adminAlert.type === 'error' ? '✕' : '✓'}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-black truncate">{adminAlert.title || (adminAlert.type === 'error' ? 'Gagal' : 'Berhasil!')}</p>
+                <p className="text-[11px] text-slate-200 line-clamp-2 mt-0.5">{adminAlert.message}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAdminAlert(null)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

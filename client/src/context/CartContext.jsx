@@ -10,10 +10,15 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState({ id: 'guest_cart', items: [] });
   const [loading, setLoading] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [cartToast, setCartToast] = useState('');
+
+  const showToast = (message) => {
+    setCartToast(message);
+    setTimeout(() => setCartToast(''), 3000);
+  };
 
   // Load cart from server if authenticated, or localStorage if guest
   const fetchCart = async () => {
-    // Admin also allowed to test cart
     if (isAuthenticated) {
       try {
         setLoading(true);
@@ -65,12 +70,6 @@ export function CartProvider({ children }) {
     }
   };
 
-  const [cartToast, setCartToast] = useState('');
-  const showToast = (message) => {
-    setCartToast(message);
-    setTimeout(() => setCartToast(''), 3000);
-  };
-
   useEffect(() => {
     fetchCart();
   }, [isAuthenticated]);
@@ -104,75 +103,82 @@ export function CartProvider({ children }) {
         return { success: false, message: 'Hewan tidak ditemukan' };
       }
 
-      const currentItems = cart.items || [];
-      const existingIdx = currentItems.findIndex(i => i.animal_id === animalObj.id);
-      let updated;
-      if (existingIdx > -1) {
-        updated = [...currentItems];
-        updated[existingIdx].quantity = (updated[existingIdx].quantity || 1) + qty;
-        if (notes) updated[existingIdx].notes = notes;
+      const existingCart = localStorage.getItem('ternakmart_guest_cart');
+      let currentItems = existingCart ? JSON.parse(existingCart) : [];
+      const itemIndex = currentItems.findIndex(i => i.animal_id === animalObj.id);
+
+      if (itemIndex > -1) {
+        currentItems[itemIndex].quantity = (currentItems[itemIndex].quantity || 1) + qty;
       } else {
-        const newItem = {
+        currentItems.push({
+          id: `guest_item_${Date.now()}`,
           animal_id: animalObj.id,
-          store_id: animalObj.store_id || (animalObj.store && animalObj.store.id),
-          store_name: animalObj.store ? animalObj.store.store_name : 'Kandang Peternak',
-          store_tier: animalObj.store ? animalObj.store.tier : 'BRONZE',
-          farm_address: animalObj.store ? animalObj.store.farm_address : '',
           title: animalObj.title,
-          category: animalObj.category,
-          breed: animalObj.breed,
-          weight_kg: animalObj.weight_kg,
           price: animalObj.price,
-          images: animalObj.images,
-          is_qurban_eligible: animalObj.is_qurban_eligible,
-          skkh_verification_status: animalObj.skkh_verification_status,
+          weight_kg: animalObj.weight_kg,
+          image_url: animalObj.primary_image || (animalObj.images && animalObj.images[0]) || '',
           quantity: qty,
-          notes: notes || ''
-        };
-        updated = [...currentItems, newItem];
+          store_name: animalObj.store_name,
+          store_tier: animalObj.store_tier,
+          farm_address: animalObj.farm_address
+        });
       }
-      setCart({ id: 'guest_cart', items: updated });
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(updated));
-      showToast(`✓ ${itemTitle} ditambahkan ke keranjang!`);
-      return { success: true, message: 'Ditambahkan ke keranjang belanja!' };
+
+      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(currentItems));
+      setCart({ id: 'guest_cart', items: currentItems });
+      showToast(`✓ ${animalObj.title} ditambahkan ke keranjang!`);
+      return { success: true };
     }
   };
 
-  const updateQuantity = async (animalId, newQuantity) => {
-    const qty = parseInt(newQuantity);
+  const updateQuantity = async (animalId, quantity) => {
+    const qty = Math.max(0, parseInt(quantity) || 0);
+
     if (isAuthenticated) {
-      const res = await api.put('/carts/quantity', { animal_id: animalId, quantity: qty });
-      if (res.success) {
-        await fetchCart();
-      }
-      return res;
-    } else {
-      let updated;
-      if (qty <= 0) {
-        updated = (cart.items || []).filter(i => i.animal_id !== animalId);
+      if (qty === 0) {
+        const res = await api.delete(`/carts/item/${animalId}`);
+        if (res.success) await fetchCart();
+        return res;
       } else {
-        updated = (cart.items || []).map(i =>
-          i.animal_id === animalId ? { ...i, quantity: qty } : i
-        );
+        const res = await api.put('/carts/quantity', { animal_id: animalId, quantity: qty });
+        if (res.success) await fetchCart();
+        return res;
       }
-      setCart({ id: 'guest_cart', items: updated });
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(updated));
+    } else {
+      const existingCart = localStorage.getItem('ternakmart_guest_cart');
+      let currentItems = existingCart ? JSON.parse(existingCart) : [];
+
+      if (qty === 0) {
+        currentItems = currentItems.filter(i => i.animal_id !== animalId);
+      } else {
+        const item = currentItems.find(i => i.animal_id === animalId);
+        if (item) item.quantity = qty;
+      }
+
+      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(currentItems));
+      setCart({ id: 'guest_cart', items: currentItems });
       return { success: true };
     }
   };
 
   const bulkDelete = async (animalIds) => {
-    if (!Array.isArray(animalIds) || animalIds.length === 0) return { success: false };
+    if (!animalIds || animalIds.length === 0) return { success: true };
+
     if (isAuthenticated) {
-      const res = await api.post('/carts/bulk-delete', { animal_ids: animalIds });
-      if (res.success) {
-        await fetchCart();
+      try {
+        const res = await api.post('/carts/bulk-delete', { animal_ids: animalIds });
+        if (res.success) await fetchCart();
+        return res;
+      } catch (err) {
+        console.warn('Bulk delete error:', err);
+        return { success: false, message: err.message };
       }
-      return res;
     } else {
-      const updated = (cart.items || []).filter(i => !animalIds.includes(i.animal_id));
-      setCart({ id: 'guest_cart', items: updated });
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(updated));
+      const existingCart = localStorage.getItem('ternakmart_guest_cart');
+      let currentItems = existingCart ? JSON.parse(existingCart) : [];
+      currentItems = currentItems.filter(i => !animalIds.includes(i.animal_id));
+      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(currentItems));
+      setCart({ id: 'guest_cart', items: currentItems });
       return { success: true };
     }
   };
@@ -217,14 +223,14 @@ export function CartProvider({ children }) {
     >
       {children}
 
-      {/* Global Bottom-Right Toast for Add to Cart */}
+      {/* Global Responsive Toast for Add to Cart (Mobile & Desktop) */}
       {cartToast && (
-        <div className="fixed bottom-6 right-6 z-[9999] bg-slate-900/95 border border-emerald-500/40 text-white px-5 py-3.5 rounded-2xl shadow-xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-24 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-auto sm:max-w-sm z-[99999] bg-slate-900/95 border border-emerald-500/40 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
             ✓
           </div>
-          <div className="min-w-0 pr-2">
-            <p className="text-xs font-bold truncate max-w-xs">{cartToast}</p>
+          <div className="min-w-0 pr-2 flex-1">
+            <p className="text-xs font-bold truncate">{cartToast}</p>
             <p className="text-[10px] text-slate-400">Item keranjang berhasil diperbarui.</p>
           </div>
         </div>
