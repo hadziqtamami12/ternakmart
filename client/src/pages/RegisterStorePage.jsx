@@ -400,7 +400,7 @@ export default function RegisterStorePage({ onBack, onSuccess, onNavigate }) {
             <label className="font-bold text-theme-text block mb-1.5 flex items-center justify-between">
               <span>Titik Koordinat Kandang (Tikor GPS untuk Kurir GoTernak)</span>
               <span className="font-mono text-[10px] text-theme-muted">
-                {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                {Number(latitude || -6.2).toFixed(5)}, {Number(longitude || 106.8).toFixed(5)}
               </span>
             </label>
 

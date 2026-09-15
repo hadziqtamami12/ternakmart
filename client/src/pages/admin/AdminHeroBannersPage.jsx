@@ -18,6 +18,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { api } from '../../utils/api';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 
 export default function AdminHeroBannersPage() {
   const [banners, setBanners] = useState([]);
@@ -98,7 +99,7 @@ export default function AdminHeroBannersPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!form.title || !form.image) {
-      alert('Judul dan URL gambar wajib diisi.');
+      notifyAdminError('Judul dan URL gambar wajib diisi.');
       return;
     }
 
@@ -108,6 +109,7 @@ export default function AdminHeroBannersPage() {
       if (editingBanner) {
         const res = await api.put(`/hero-banners/${editingBanner.id}`, form);
         if (res.success) {
+          notifyAdminSuccess('Banner hero berhasil diperbarui!');
           setSuccessMsg('Banner hero berhasil diperbarui!');
           setIsFormOpen(false);
           fetchBanners();
@@ -115,6 +117,7 @@ export default function AdminHeroBannersPage() {
       } else {
         const res = await api.post('/hero-banners', form);
         if (res.success) {
+          notifyAdminSuccess('Banner hero baru berhasil ditambahkan!');
           setSuccessMsg('Banner hero baru berhasil ditambahkan!');
           setIsFormOpen(false);
           fetchBanners();
@@ -122,6 +125,7 @@ export default function AdminHeroBannersPage() {
       }
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err) {
+      notifyAdminError(err.message || 'Gagal menyimpan banner hero.');
       setError(err.message || 'Gagal menyimpan banner hero.');
     } finally {
       setSaving(false);
@@ -133,12 +137,13 @@ export default function AdminHeroBannersPage() {
     try {
       const res = await api.delete(`/hero-banners/${id}`);
       if (res.success) {
+        notifyAdminSuccess('Banner hero berhasil dihapus.');
         setSuccessMsg('Banner hero berhasil dihapus.');
         fetchBanners();
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal menghapus banner.');
+      notifyAdminError(err.message || 'Gagal menghapus banner.');
     }
   };
 
@@ -148,10 +153,11 @@ export default function AdminHeroBannersPage() {
         is_active: !banner.is_active
       });
       if (res.success) {
+        notifyAdminSuccess(`Status banner '${banner.title}' berhasil diubah.`);
         fetchBanners();
       }
     } catch (err) {
-      alert(err.message || 'Gagal mengubah status aktif.');
+      notifyAdminError(err.message || 'Gagal mengubah status aktif.');
     }
   };
 

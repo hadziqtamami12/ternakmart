@@ -186,10 +186,10 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
             <select
               value={
                 minPrice === '' && maxPrice === '' ? '' :
-                maxPrice === '10000000' ? 'under_10' :
-                minPrice === '10000000' && maxPrice === '30000000' ? '10_30' :
-                minPrice === '30000000' && maxPrice === '50000000' ? '30_50' :
-                minPrice === '50000000' ? 'above_50' : 'custom'
+                  maxPrice === '10000000' ? 'under_10' :
+                    minPrice === '10000000' && maxPrice === '30000000' ? '10_30' :
+                      minPrice === '30000000' && maxPrice === '50000000' ? '30_50' :
+                        minPrice === '50000000' ? 'above_50' : 'custom'
               }
               onChange={(e) => {
                 const val = e.target.value;
@@ -216,10 +216,10 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
             <select
               value={
                 minWeight === '' && maxWeight === '' ? '' :
-                maxWeight === '50' ? 'under_50' :
-                minWeight === '50' && maxWeight === '100' ? '50_100' :
-                minWeight === '100' && maxWeight === '500' ? '100_500' :
-                minWeight === '500' ? 'above_500' : 'custom'
+                  maxWeight === '50' ? 'under_50' :
+                    minWeight === '50' && maxWeight === '100' ? '50_100' :
+                      minWeight === '100' && maxWeight === '500' ? '100_500' :
+                        minWeight === '500' ? 'above_500' : 'custom'
               }
               onChange={(e) => {
                 const val = e.target.value;
@@ -385,7 +385,7 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
                           <ShoppingBag className="w-3.5 h-3.5" />
                         </button>
                         <span className="px-3 py-1.5 rounded-xl bg-theme-primary-light text-theme-primary text-xs font-bold">
-                          Pilih
+                          Beli
                         </span>
                       </div>
                     </div>
@@ -472,11 +472,10 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
                     key={cat.id}
                     type="button"
                     onClick={() => setCategory(cat.id)}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border text-left ${
-                      category === cat.id
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border text-left ${category === cat.id
                         ? 'bg-theme-primary text-white border-theme-primary shadow-sm'
                         : 'bg-theme-bg text-theme-text border-theme-border hover:border-theme-primary/40'
-                    }`}
+                      }`}
                   >
                     <span className="text-base">{cat.icon}</span>
                     <span className="truncate">{cat.label}</span>
@@ -504,11 +503,10 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
                       key={idx}
                       type="button"
                       onClick={() => { setMinPrice(pr.min); setMaxPrice(pr.max); }}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
-                        active
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${active
                           ? 'bg-theme-primary text-white border-theme-primary shadow-sm'
                           : 'bg-theme-bg text-theme-text border-theme-border'
-                      }`}
+                        }`}
                     >
                       {pr.label}
                     </button>
@@ -536,11 +534,10 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
                       key={idx}
                       type="button"
                       onClick={() => { setMinWeight(wt.min); setMaxWeight(wt.max); }}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
-                        active
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${active
                           ? 'bg-theme-primary text-white border-theme-primary shadow-sm'
                           : 'bg-theme-bg text-theme-text border-theme-border'
-                      }`}
+                        }`}
                     >
                       {wt.label}
                     </button>
@@ -565,11 +562,10 @@ export default function CatalogPage({ initialCategory, searchQuery, onSelectAnim
                     key={p.id}
                     type="button"
                     onClick={() => setTeethPoel(p.id)}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${
-                      teethPoel === p.id
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all border text-center ${teethPoel === p.id
                         ? 'bg-theme-primary text-white border-theme-primary shadow-sm'
                         : 'bg-theme-bg text-theme-text border-theme-border'
-                    }`}
+                      }`}
                   >
                     {p.label}
                   </button>

@@ -18,18 +18,29 @@ window.__setServerTheme = (theme) => {
   }
 };
 
+export function normalizeThemeId(themeId) {
+  if (!themeId) return 'meadow-emerald';
+  if (themeId === 'emerald-agro') return 'meadow-emerald';
+  const found = THEMES.find(t => t.id === themeId);
+  return found ? found.id : 'meadow-emerald';
+}
+
 export function ThemeProvider({ children }) {
-  const [marketplaceTheme, setMarketplaceTheme] = useState('meadow-emerald');
+  const [marketplaceTheme, setMarketplaceTheme] = useState(() => {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('ternakmart_theme') : null;
+    return normalizeThemeId(stored || 'meadow-emerald');
+  });
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [serverTheme, setServerThemeState] = useState(null);
   const initializedRef = useRef(false);
 
   // Apply theme to document (both landing page and admin share the theme)
   const applyTheme = useCallback((theme, saveStorage = true) => {
-    document.documentElement.setAttribute('data-theme', theme);
+    const normalized = normalizeThemeId(theme);
+    document.documentElement.setAttribute('data-theme', normalized);
     const isPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('theme_preview');
-    if (saveStorage && !isPreview) {
-      localStorage.setItem('ternakmart_theme', theme);
+    if (saveStorage && !isPreview && typeof localStorage !== 'undefined') {
+      localStorage.setItem('ternakmart_theme', normalized);
     }
   }, []);
 
@@ -38,9 +49,12 @@ export function ThemeProvider({ children }) {
     const isPreview = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('theme_preview');
     if (isPreview) return;
 
-    if (serverTheme && serverTheme !== marketplaceTheme) {
-      setMarketplaceTheme(serverTheme);
-      applyTheme(serverTheme);
+    if (serverTheme) {
+      const normServer = normalizeThemeId(serverTheme);
+      if (normServer !== marketplaceTheme) {
+        setMarketplaceTheme(normServer);
+        applyTheme(normServer, true);
+      }
     }
   }, [serverTheme, marketplaceTheme, applyTheme]);
 
@@ -51,14 +65,15 @@ export function ThemeProvider({ children }) {
       const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const previewParam = params?.get('theme_preview');
 
-      if (previewParam && THEMES.some(t => t.id === previewParam)) {
-        setMarketplaceTheme(previewParam);
-        document.documentElement.setAttribute('data-theme', previewParam);
+      if (previewParam) {
+        const normPreview = normalizeThemeId(previewParam);
+        setMarketplaceTheme(normPreview);
+        document.documentElement.setAttribute('data-theme', normPreview);
       } else {
         const stored = localStorage.getItem('ternakmart_theme');
-        const initialTheme = stored || 'meadow-emerald';
+        const initialTheme = normalizeThemeId(stored || 'meadow-emerald');
         setMarketplaceTheme(initialTheme);
-        applyTheme(initialTheme);
+        applyTheme(initialTheme, true);
       }
     }
   }, [applyTheme]);
@@ -67,11 +82,9 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const handleMessage = (e) => {
       if (e.data && e.data.type === 'SET_THEME_PREVIEW') {
-        const nextTheme = e.data.theme;
-        if (THEMES.some(t => t.id === nextTheme)) {
-          setMarketplaceTheme(nextTheme);
-          document.documentElement.setAttribute('data-theme', nextTheme);
-        }
+        const nextTheme = normalizeThemeId(e.data.theme);
+        setMarketplaceTheme(nextTheme);
+        document.documentElement.setAttribute('data-theme', nextTheme);
       }
     };
 
@@ -82,7 +95,9 @@ export function ThemeProvider({ children }) {
   // Override global setter with actual implementation
   useEffect(() => {
     window.__themeContextSetServerTheme = (theme) => {
-      setServerThemeState(theme);
+      if (theme) {
+        setServerThemeState(normalizeThemeId(theme));
+      }
     };
     return () => {
       window.__themeContextSetServerTheme = () => {};
@@ -90,11 +105,10 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const switchTheme = useCallback((newTheme) => {
-    if (THEMES.some(t => t.id === newTheme)) {
-      setMarketplaceTheme(newTheme);
-      applyTheme(newTheme, isAdminMode);
-    }
-  }, [isAdminMode, applyTheme]);
+    const valid = normalizeThemeId(newTheme);
+    setMarketplaceTheme(valid);
+    applyTheme(valid, true);
+  }, [applyTheme]);
 
   const enterAdminMode = useCallback(() => {
     setIsAdminMode(true);

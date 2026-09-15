@@ -69,23 +69,72 @@ const heroBannerRoutes = require('./routes/heroBannerRoutes');
 const apiRouter = express.Router();
 
 apiRouter.use('/auth', authRoutes);
+
+// Stores (plural & singular aliases)
 apiRouter.use('/stores', storeRoutes);
+apiRouter.use('/store', storeRoutes);
+
+// Animals (plural & singular aliases)
 apiRouter.use('/animals', animalRoutes);
+apiRouter.use('/animal', animalRoutes);
+
+// Carts (plural & singular aliases)
 apiRouter.use('/carts', cartRoutes);
+apiRouter.use('/cart', cartRoutes);
+
+// Orders (plural & singular aliases)
 apiRouter.use('/orders', orderRoutes);
+apiRouter.use('/order', orderRoutes);
+
+// Payments (plural & singular aliases)
 apiRouter.use('/payments', paymentRoutes);
+apiRouter.use('/payment', paymentRoutes);
+
+// Courier
 apiRouter.use('/courier', courierRoutes);
+apiRouter.use('/couriers', courierRoutes);
+
+// Chats
 apiRouter.use('/chats', chatRoutes);
+apiRouter.use('/chat', chatRoutes);
+
+// Reviews (plural & singular aliases)
 apiRouter.use('/reviews', reviewRoutes);
+apiRouter.use('/review', reviewRoutes);
+
+// Vouchers
 apiRouter.use('/vouchers', voucherRoutes);
+apiRouter.use('/voucher', voucherRoutes);
+
+// Settings (plural & singular aliases)
 apiRouter.use('/settings', settingRoutes);
+apiRouter.use('/setting', settingRoutes);
+
+// Hero Banners (plural & singular aliases)
+apiRouter.use('/hero-banners', heroBannerRoutes);
+apiRouter.use('/hero-banner', heroBannerRoutes);
+
 apiRouter.use('/audit-logs', auditRoutes);
 apiRouter.use('/notifications', notificationRoutes);
 apiRouter.use('/uploads', uploadRoutes);
 apiRouter.use('/addresses', addressRoutes);
+apiRouter.use('/address', addressRoutes);
 apiRouter.use('/badges', badgeRoutes);
+apiRouter.use('/badge', badgeRoutes);
 apiRouter.use('/shipping-settings', shippingSettingRoutes);
-apiRouter.use('/hero-banners', heroBannerRoutes);
+
+// Admin Portal Specific Aliases
+apiRouter.use('/admin/users', authRoutes);
+apiRouter.use('/admin/badges', badgeRoutes);
+apiRouter.use('/admin/settings', settingRoutes);
+apiRouter.use('/admin/shipping-settings', shippingSettingRoutes);
+apiRouter.use('/admin/hero-banners', heroBannerRoutes);
+apiRouter.use('/admin/hero-banner', heroBannerRoutes);
+apiRouter.use('/admin/orders', orderRoutes);
+apiRouter.use('/admin/stores', storeRoutes);
+apiRouter.use('/admin/animals', animalRoutes);
+apiRouter.use('/admin/reviews', reviewRoutes);
+apiRouter.use('/admin/audit-logs', auditRoutes);
 
 // Health check
 apiRouter.get('/health', async (req, res) => {

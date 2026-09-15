@@ -34,6 +34,16 @@ module.exports = (req, res) => {
     }
   }
 
+  // Resilient URL normalization for Vercel rewrites
+  if (req.url) {
+    if (req.url === '/api/index.js' || req.url.startsWith('/api/index.js?') || req.url === '/api' || req.url === '/api/') {
+      const originalPath = req.headers['x-matched-path'] || req.headers['x-forwarded-url'] || req.headers['x-now-route-matches'];
+      if (originalPath) {
+        req.url = originalPath;
+      }
+    }
+  }
+
   try {
     return app(req, res);
   } catch (handlerErr) {

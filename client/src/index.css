@@ -18,7 +18,8 @@
   --color-accent-border: #86EFAC;
 }
 
-[data-theme="meadow-emerald"] {
+[data-theme="meadow-emerald"],
+[data-theme="emerald-agro"] {
   --color-bg: #F0FDF4;
   --color-card: #ffffff;
   --color-border: #bbf7d0;

@@ -17,6 +17,7 @@ import {
 import { api } from '../../utils/api';
 import { formatRupiah } from '../../utils/formatters';
 import TierBadge from '../../components/common/TierBadge';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 
 export default function AdminBadgesPage() {
   const [badges, setBadges] = useState([]);
@@ -62,8 +63,8 @@ export default function AdminBadgesPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/admin/users');
-      if (res.success && res.data) {
+      const res = await api.get('/auth/users').catch(() => api.get('/admin/users'));
+      if (res && res.success && res.data) {
         setUsers(res.data);
       }
     } catch (err) {
@@ -142,7 +143,7 @@ export default function AdminBadgesPage() {
   const handleAssignBadge = async (e) => {
     e.preventDefault();
     if (!selectedUserId || !overrideBadgeId) {
-      alert('Pilih pengguna dan tier badge terlebih dahulu.');
+      notifyAdminError('Pilih pengguna dan tier badge terlebih dahulu.');
       return;
     }
     setAssigning(true);
@@ -153,11 +154,13 @@ export default function AdminBadgesPage() {
         badge_id: overrideBadgeId
       });
       if (res.success) {
+        notifyAdminSuccess('Tier badge pengguna berhasil diperbarui!');
         setSuccessMsg('Tier badge pengguna berhasil diperbarui.');
         fetchUsers();
         setTimeout(() => setSuccessMsg(''), 4000);
       }
     } catch (err) {
+      notifyAdminError(err.message || 'Gagal menugaskan badge ke user.');
       setError(err.message || 'Gagal menugaskan badge ke user.');
     } finally {
       setAssigning(false);

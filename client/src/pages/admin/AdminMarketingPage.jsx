@@ -20,6 +20,7 @@ import { api } from '../../utils/api';
 import { useAppConfig } from '../../context/AppConfigContext';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
 import PromoEventModal from '../../components/common/PromoEventModal';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 
 export default function AdminMarketingPage() {
   const { config, updatePlatformConfig, setDocumentTitle } = useAppConfig();
@@ -35,6 +36,10 @@ export default function AdminMarketingPage() {
   const [promoModalCode, setPromoModalCode] = useState(config?.promo_modal_code || 'QURBANBERKAH');
   const [promoModalImage, setPromoModalImage] = useState(config?.promo_modal_image || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80');
   const [promoModalCtaText, setPromoModalCtaText] = useState(config?.promo_modal_cta_text || 'Serbu Promo Sekarang');
+  const [promoModalDiscountType, setPromoModalDiscountType] = useState(config?.promo_modal_discount_type || 'PERCENT');
+  const [promoModalDiscountValue, setPromoModalDiscountValue] = useState(config?.promo_modal_discount_value !== undefined ? config.promo_modal_discount_value : 15);
+  const [promoModalMaxCap, setPromoModalMaxCap] = useState(config?.promo_modal_max_cap !== undefined ? config.promo_modal_max_cap : 1500000);
+  const [promoModalMinPurchase, setPromoModalMinPurchase] = useState(config?.promo_modal_min_purchase || 0);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
   // Reviews State & Inline Form (No Modal)
@@ -75,12 +80,13 @@ export default function AdminMarketingPage() {
       if (res.success) {
         setIsReviewFormOpen(false);
         setReviewForm({ user_name: '', rating: 5, weight_match_rating: 5, comment: '', animal_id: '' });
+        notifyAdminSuccess('Ulasan pembeli berhasil ditambahkan!');
         setSuccessMsg('✓ Ulasan pembeli berhasil ditambahkan!');
         fetchInitialData();
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal menambahkan ulasan.');
+      notifyAdminError(err.message || 'Gagal menambahkan ulasan.');
     } finally {
       setSaving(false);
     }
@@ -92,11 +98,12 @@ export default function AdminMarketingPage() {
       const res = await api.delete(`/reviews/${id}`);
       if (res.success) {
         setReviews(prev => prev.filter(r => r.id !== id));
+        notifyAdminSuccess('Ulasan berhasil dihapus.');
         setSuccessMsg('✓ Ulasan berhasil dihapus.');
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal menghapus ulasan.');
+      notifyAdminError(err.message || 'Gagal menghapus ulasan.');
     }
   };
 
@@ -105,19 +112,46 @@ export default function AdminMarketingPage() {
     setSaving(true);
     setSuccessMsg('');
     try {
+      const codeUpper = (promoModalCode || 'QURBANBERKAH').trim().toUpperCase();
+
       await updatePlatformConfig({
         promo_modal_enabled: promoModalEnabled,
         promo_modal_title: promoModalTitle,
         promo_modal_badge: promoModalBadge,
         promo_modal_subtitle: promoModalSubtitle,
-        promo_modal_code: promoModalCode,
+        promo_modal_code: codeUpper,
         promo_modal_image: promoModalImage,
-        promo_modal_cta_text: promoModalCtaText
+        promo_modal_cta_text: promoModalCtaText,
+        promo_modal_discount_type: promoModalDiscountType,
+        promo_modal_discount_value: parseFloat(promoModalDiscountValue || 0),
+        promo_modal_max_cap: promoModalDiscountType === 'PERCENT' ? (promoModalMaxCap ? parseFloat(promoModalMaxCap) : null) : null,
+        promo_modal_min_purchase: parseFloat(promoModalMinPurchase || 0)
       });
-      setSuccessMsg('✓ Pengaturan Popup Modal Promo Beranda berhasil disimpan!');
+
+      // Synchronize directly with backend vouchers table so buyers can actually use this discount!
+      if (codeUpper) {
+        try {
+          await api.post('/vouchers', {
+            voucher_code: codeUpper,
+            discount_type: promoModalDiscountType,
+            discount_value: parseFloat(promoModalDiscountValue || 0),
+            min_purchase: parseFloat(promoModalMinPurchase || 0),
+            max_discount_cap: promoModalDiscountType === 'PERCENT' ? (promoModalMaxCap ? parseFloat(promoModalMaxCap) : null) : null,
+            is_shipping_subsidy: false,
+            start_time: new Date().toISOString(),
+            end_time: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+            quota: 1000
+          });
+        } catch (syncErr) {
+          console.warn('Voucher sync note:', syncErr.message);
+        }
+      }
+
+      notifyAdminSuccess('Pengaturan Popup Banner Promo & Besaran Diskon Kupon berhasil disimpan!');
+      setSuccessMsg('✓ Pengaturan Popup Modal Promo & Nilai Diskon berhasil disimpan!');
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      alert(err.message || 'Gagal menyimpan pengaturan modal promo.');
+      notifyAdminError(err.message || 'Gagal menyimpan pengaturan modal promo.');
     } finally {
       setSaving(false);
     }
@@ -465,6 +499,137 @@ export default function AdminMarketingPage() {
               </div>
             </div>
 
+            {/* Dedicated Discount Reduction Settings for Popup Coupon */}
+            <div className="bg-theme-bg/60 border border-theme-border rounded-2xl p-4 sm:p-5 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h3 className="font-extrabold text-theme-text text-xs uppercase tracking-wider flex items-center gap-1.5 text-theme-primary">
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>Besaran & Nilai Pengurangan Kupon Popup</span>
+                  </h3>
+                  <p className="text-[11px] text-theme-muted mt-0.5">
+                    Atur nominal pasti potongan harga atau persentase diskon yang didapat saat kupon ini digunakan.
+                  </p>
+                </div>
+                <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  {promoModalDiscountType === 'PERCENT'
+                    ? `${promoModalDiscountValue}% OFF (Maks. ${formatRupiah(promoModalMaxCap)})`
+                    : `Potongan ${formatRupiah(promoModalDiscountValue)}`}
+                </span>
+              </div>
+
+              {/* Discount Type Toggle */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setPromoModalDiscountType('PERCENT')}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    promoModalDiscountType === 'PERCENT'
+                      ? 'border-theme-primary bg-theme-primary/10 text-theme-primary ring-1 ring-theme-primary font-bold'
+                      : 'border-theme-border bg-theme-bg text-theme-muted hover:border-theme-border/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Percent className="w-4 h-4" />
+                    <span className="text-xs font-black">Diskon Persentase (%)</span>
+                  </div>
+                  <p className="text-[11px] text-theme-muted mt-1 font-normal">
+                    Memotong persentase dari total belanja (cth: 15% OFF dengan batas maksimal).
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPromoModalDiscountType('NOMINAL')}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    promoModalDiscountType === 'NOMINAL'
+                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500 font-bold'
+                      : 'border-theme-border bg-theme-bg text-theme-muted hover:border-theme-border/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4" />
+                    <span className="text-xs font-black">Potongan Nominal Rupiah (Rp)</span>
+                  </div>
+                  <p className="text-[11px] text-theme-muted mt-1 font-normal">
+                    Pengurangan langsung bernilai tetap (cth: Potongan Rp 500.000).
+                  </p>
+                </button>
+              </div>
+
+              {/* Dynamic Inputs */}
+              {promoModalDiscountType === 'PERCENT' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="font-bold text-theme-text block mb-1">Besaran Diskon (%) *</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        value={promoModalDiscountValue}
+                        onChange={(e) => setPromoModalDiscountValue(Math.min(90, Math.max(1, Number(e.target.value) || 0)))}
+                        className="w-full bg-theme-bg border border-theme-border rounded-xl px-3.5 py-2.5 pr-8 text-xs text-theme-text font-bold focus:outline-none focus:border-theme-primary"
+                      />
+                      <span className="absolute right-3.5 top-2.5 font-bold text-theme-primary text-xs">%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-theme-text block mb-1">Maksimal Batas Pengurangan (Cap Diskon Rp)</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-2.5 font-bold text-theme-muted text-xs">Rp</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50000"
+                        placeholder="1500000"
+                        value={promoModalMaxCap || ''}
+                        onChange={(e) => setPromoModalMaxCap(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full bg-theme-bg border border-theme-border rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-theme-text font-bold focus:outline-none focus:border-theme-primary"
+                      />
+                    </div>
+                    <p className="text-[10px] text-theme-muted mt-0.5">Batas maksimal nominal rupiah potongan yang didapatkan.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-1">
+                  <label className="font-bold text-theme-text block mb-1">Harga Pengurangan Kupon (Rp) *</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-2.5 font-bold text-emerald-600 text-xs">Rp</span>
+                    <input
+                      type="number"
+                      min="10000"
+                      step="50000"
+                      placeholder="500000"
+                      value={promoModalDiscountValue}
+                      onChange={(e) => setPromoModalDiscountValue(Number(e.target.value) || 0)}
+                      className="w-full bg-theme-bg border border-theme-border rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-theme-text font-black text-emerald-600 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <p className="text-[10px] text-theme-muted mt-0.5">Nominal tunai yang langsung mengurangi total harga hewan ternak saat checkout.</p>
+                </div>
+              )}
+
+              {/* Min Purchase Input */}
+              <div className="pt-1">
+                <label className="font-bold text-theme-text block mb-1">Minimal Belanja Transaksi (Rp)</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-2.5 font-bold text-theme-muted text-xs">Rp</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100000"
+                    placeholder="0"
+                    value={promoModalMinPurchase || ''}
+                    onChange={(e) => setPromoModalMinPurchase(Number(e.target.value) || 0)}
+                    className="w-full bg-theme-bg border border-theme-border rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-theme-text font-bold focus:outline-none focus:border-theme-primary"
+                  />
+                </div>
+                <p className="text-[10px] text-theme-muted mt-0.5">Isi 0 jika tidak ada syarat minimum belanja.</p>
+              </div>
+            </div>
+
             {/* Actions */}
             <div className="pt-4 border-t border-theme-border flex items-center justify-end gap-3">
               <button
@@ -489,8 +654,6 @@ export default function AdminMarketingPage() {
         </div>
       )}
 
-
-
       {/* Admin Live Preview of Promo Modal */}
       {showPreviewModal && (
         <PromoEventModal
@@ -503,7 +666,11 @@ export default function AdminMarketingPage() {
             promo_modal_subtitle: promoModalSubtitle,
             promo_modal_code: promoModalCode,
             promo_modal_image: promoModalImage,
-            promo_modal_cta_text: promoModalCtaText
+            promo_modal_cta_text: promoModalCtaText,
+            promo_modal_discount_type: promoModalDiscountType,
+            promo_modal_discount_value: promoModalDiscountValue,
+            promo_modal_max_cap: promoModalMaxCap,
+            promo_modal_min_purchase: promoModalMinPurchase
           }}
         />
       )}

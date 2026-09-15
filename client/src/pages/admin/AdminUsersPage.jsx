@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import DataTable from '../../components/common/DataTable';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 import TierBadge from '../../components/common/TierBadge';
 
 export default function AdminUsersPage() {
@@ -133,6 +134,7 @@ export default function AdminUsersPage() {
         }
         const res = await api.put(`/auth/users/${editingUser.id}`, payload);
         if (res.success) {
+          notifyAdminSuccess(`Data pengguna '${formData.name}' berhasil diperbarui!`);
           setSuccessMsg(`✓ Data pengguna '${formData.name}' berhasil diperbarui!`);
           setIsFormOpen(false);
           fetchUsers();
@@ -141,6 +143,7 @@ export default function AdminUsersPage() {
       } else {
         const res = await api.post('/auth/users', formData);
         if (res.success) {
+          notifyAdminSuccess(`Pengguna baru '${formData.name}' berhasil ditambahkan!`);
           setSuccessMsg(`✓ Pengguna baru '${formData.name}' berhasil ditambahkan!`);
           setIsFormOpen(false);
           fetchUsers();
@@ -148,6 +151,7 @@ export default function AdminUsersPage() {
         }
       }
     } catch (err) {
+      notifyAdminError(err.message || 'Gagal menyimpan data pengguna.');
       setFormError(err.message || 'Gagal menyimpan data pengguna.');
     } finally {
       setSaving(false);
@@ -159,11 +163,12 @@ export default function AdminUsersPage() {
       const res = await api.put(`/auth/users/${userId}`, { role: newRole });
       if (res.success) {
         setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        notifyAdminSuccess(`Level peran pengguna berhasil diubah ke '${newRole}'!`);
         setSuccessMsg(`✓ Level pengguna berhasil diubah ke '${newRole}'!`);
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal mengubah level peran.');
+      notifyAdminError(err.message || 'Gagal mengubah level peran.');
     }
   };
 
@@ -175,11 +180,12 @@ export default function AdminUsersPage() {
       const res = await api.delete(`/auth/users/${user.id}`);
       if (res.success) {
         setUsers(prev => prev.filter(u => u.id !== user.id));
+        notifyAdminSuccess(`Pengguna '${user.name}' berhasil dihapus.`);
         setSuccessMsg(`✓ Pengguna '${user.name}' berhasil dihapus.`);
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal menghapus pengguna.');
+      notifyAdminError(err.message || 'Gagal menghapus pengguna.');
     }
   };
 
@@ -192,15 +198,16 @@ export default function AdminUsersPage() {
     try {
       const res = await api.put(`/stores/${storeId}/status`, { status: newStatus });
       if (res.success) {
+        notifyAdminSuccess(`Toko berhasil ${newStatus === 'ACTIVE' ? 'diverifikasi aktif' : 'diubah statusnya'}!`);
         setSuccessMsg(`✓ Toko berhasil ${newStatus === 'ACTIVE' ? 'diverifikasi aktif' : 'diubah statusnya'}!`);
         fetchStores();
         fetchUsers();
         setTimeout(() => setSuccessMsg(''), 3000);
       } else {
-        alert(res.message || 'Gagal memperbarui status toko.');
+        notifyAdminError(res.message || 'Gagal memperbarui status toko.');
       }
     } catch (err) {
-      alert(err.message || 'Gagal memperbarui status toko.');
+      notifyAdminError(err.message || 'Gagal memperbarui status toko.');
     }
   };
 

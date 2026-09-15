@@ -7,18 +7,25 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   // ── Customer / Marketplace Session ──────────────────────────────────
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem('ternakmart_token') || null);
+  const [token, setToken] = useState(() => {
+    const t = typeof localStorage !== 'undefined' ? localStorage.getItem('ternakmart_token') : null;
+    return (t && t !== 'null' && t !== 'undefined') ? t : null;
+  });
   const [loading, setLoading] = useState(true);
 
   // ── Admin Session (Strictly isolated to /admin) ──────────────────────
   const [adminUser, setAdminUser] = useState(null);
-  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('ternakmart_admin_token') || null);
+  const [adminToken, setAdminToken] = useState(() => {
+    const t = typeof localStorage !== 'undefined' ? localStorage.getItem('ternakmart_admin_token') : null;
+    return (t && t !== 'null' && t !== 'undefined') ? t : null;
+  });
   const [adminLoading, setAdminLoading] = useState(true);
 
   // Validate Customer User Session
   const fetchCustomerUser = async () => {
     const currentToken = localStorage.getItem('ternakmart_token');
-    if (!currentToken) {
+    if (!currentToken || currentToken === 'null' || currentToken === 'undefined') {
+      localStorage.removeItem('ternakmart_token');
       setUser(null);
       setLoading(false);
       return;
@@ -49,7 +56,8 @@ export function AuthProvider({ children }) {
   // Validate Admin User Session
   const fetchAdminUser = async () => {
     const currentAdminToken = localStorage.getItem('ternakmart_admin_token');
-    if (!currentAdminToken) {
+    if (!currentAdminToken || currentAdminToken === 'null' || currentAdminToken === 'undefined') {
+      localStorage.removeItem('ternakmart_admin_token');
       setAdminUser(null);
       setAdminLoading(false);
       return;
@@ -178,4 +186,20 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  return ctx || {
+    user: null,
+    token: null,
+    loading: false,
+    isAuthenticated: false,
+    isSeller: false,
+    isCourier: false,
+    isBuyer: false,
+    adminUser: null,
+    adminToken: null,
+    adminLoading: false,
+    isAdminAuthenticated: false,
+    isAdmin: false
+  };
+};

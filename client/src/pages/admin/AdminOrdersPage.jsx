@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../utils/api';
 import { formatRupiah, formatWeight } from '../../utils/formatters';
+import { notifyAdminSuccess, notifyAdminError } from '../../utils/adminAlert';
 import { useTimezone } from '../../context/TimezoneContext';
 import DataTable from '../../components/common/DataTable';
 
@@ -70,11 +71,12 @@ export default function AdminOrdersPage() {
       });
       if (res.success) {
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        notifyAdminSuccess(`Status pesanan berhasil diperbarui ke ${newStatus}!`);
         setSuccessMsg(`✓ Status pesanan berhasil diperbarui ke ${newStatus}!`);
         setTimeout(() => setSuccessMsg(''), 3000);
       }
     } catch (err) {
-      alert(err.message || 'Gagal mengubah status pesanan.');
+      notifyAdminError(err.message || 'Gagal mengubah status pesanan.');
     } finally {
       setUpdatingId(null);
     }
@@ -101,12 +103,13 @@ export default function AdminOrdersPage() {
       });
       if (res.success && res.data) {
         setOrders(prev => prev.map(o => o.id === promoModalOrder.id ? { ...o, ...res.data } : o));
+        notifyAdminSuccess(`Promo khusus untuk order #${promoModalOrder.invoice_number} berhasil disimpan!`);
         setSuccessMsg(`✓ Promo khusus untuk order #${promoModalOrder.invoice_number} berhasil disimpan!`);
         setPromoModalOrder(null);
         setTimeout(() => setSuccessMsg(''), 3500);
       }
     } catch (err) {
-      alert(err.message || 'Gagal menyimpan promo order.');
+      notifyAdminError(err.message || 'Gagal menyimpan promo order.');
     } finally {
       setSavingPromo(false);
     }
