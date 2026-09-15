@@ -30,7 +30,7 @@ export default function ProductDetailModal({
 
   const images = Array.isArray(animal.images) && animal.images.length > 0
     ? animal.images
-    : [animal.image_url || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'];
+    : [animal.image_url || animal.primary_image || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'];
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showVideo, setShowVideo] = useState(false);

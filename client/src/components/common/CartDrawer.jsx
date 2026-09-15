@@ -59,8 +59,16 @@ export default function CartDrawer({ onNavigate, onSelectAnimal }) {
     onNavigate('cart');
   };
 
-  const handleItemClick = (item) => {
+  const handleItemClick = async (item) => {
     closeDrawer();
+    const targetId = item.animal_id || item.id;
+    try {
+      const res = await api.get(`/animals/detail/${targetId}`);
+      if (res.success && res.data) {
+        if (onSelectAnimal) onSelectAnimal(res.data);
+        return;
+      }
+    } catch (e) {}
     if (onSelectAnimal) {
       onSelectAnimal(item);
     } else {
@@ -123,14 +131,12 @@ export default function CartDrawer({ onNavigate, onSelectAnimal }) {
             items.map((item) => {
               const itemQty = item.quantity || 1;
               const itemTotal = parseFloat(item.price || 0) * itemQty;
+              const itemImg = (item.images && item.images[0]) || item.image_url || item.primary_image || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80';
 
               return (
-                <div key={item.animal_id} className="pt-3 first:pt-0 flex gap-3.5 items-start">
+                <div key={item.animal_id || item.id} className="pt-3 first:pt-0 flex gap-3.5 items-start">
                   <img
-                    src={
-                      (item.images && item.images[0]) ||
-                      'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'
-                    }
+                    src={itemImg}
                     alt={item.title}
                     onClick={() => handleItemClick(item)}
                     className="w-16 h-16 rounded-xl object-cover border border-theme-border flex-shrink-0 cursor-pointer hover:opacity-85 transition-opacity"
@@ -140,10 +146,10 @@ export default function CartDrawer({ onNavigate, onSelectAnimal }) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-theme-primary bg-theme-primary-light px-2 py-0.5 rounded">
-                        {item.category}
+                        {item.breed || item.category || 'TERNAK'}
                       </span>
                       <button
-                        onClick={() => removeFromCart(item.animal_id)}
+                        onClick={() => removeFromCart(item.animal_id || item.id)}
                         className="text-theme-muted hover:text-red-500 p-1 rounded transition-colors"
                         title="Hapus"
                       >
@@ -159,7 +165,7 @@ export default function CartDrawer({ onNavigate, onSelectAnimal }) {
                     </h4>
 
                     <p className="text-[10px] text-theme-muted mt-0.5">
-                      {formatWeight(item.weight_kg)} • {formatRupiah(item.price)}
+                      {item.farm_address ? `${item.farm_address.split(',')[0]} • ` : ''}{formatWeight(item.weight_kg)} • {formatRupiah(item.price)}
                     </p>
 
                     <div className="flex items-center justify-between mt-2 pt-1">

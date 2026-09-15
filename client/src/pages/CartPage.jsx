@@ -141,7 +141,15 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
     }
   };
 
-  const handleItemClick = (item) => {
+  const handleItemClick = async (item) => {
+    const targetId = item.animal_id || item.id;
+    try {
+      const res = await api.get(`/animals/detail/${targetId}`);
+      if (res.success && res.data) {
+        if (onSelectAnimal) onSelectAnimal(res.data);
+        return;
+      }
+    } catch (e) {}
     if (onSelectAnimal) {
       onSelectAnimal(item);
     } else {
@@ -329,7 +337,7 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
 
                       {/* Clickable Image -> Detail */}
                       <img
-                        src={(item.images && item.images[0]) || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'}
+                        src={(item.images && item.images[0]) || item.image_url || item.primary_image || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'}
                         alt={item.title}
                         onClick={() => handleItemClick(item)}
                         className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-theme-border flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
@@ -340,7 +348,7 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[10px] font-bold text-theme-primary bg-theme-primary-light px-2 py-0.5 rounded-md">
-                            {item.category}
+                            {item.breed || item.category || 'TERNAK'}
                           </span>
                           {item.skkh_verification_status && (
                             <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
@@ -356,7 +364,7 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
                           {item.title}
                         </h3>
                         <p className="text-xs text-theme-muted mt-0.5 truncate">
-                          Bobot: {formatWeight(item.weight_kg)} • {formatRupiah(item.price)}/ekor
+                          {item.farm_address ? `${item.farm_address.split(',')[0]} • ` : ''}Bobot: {formatWeight(item.weight_kg)} • {formatRupiah(item.price)}/ekor
                         </p>
                       </div>
                     </div>
