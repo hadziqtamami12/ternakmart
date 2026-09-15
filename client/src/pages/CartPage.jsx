@@ -511,7 +511,10 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-14 lg:bottom-0 left-0 right-0 z-40 bg-theme-card border-t border-theme-border shadow-elevated p-3 sm:p-4" style={{ backgroundColor: 'var(--color-card, #ffffff)' }}>
+      <div
+        className="fixed bottom-[calc(80px+env(safe-area-inset-bottom,0px))] lg:bottom-0 left-0 right-0 z-40 bg-theme-card border-t border-theme-border shadow-[0_-8px_25px_rgba(0,0,0,0.1)] p-3 sm:p-4"
+        style={{ backgroundColor: 'var(--color-card, #ffffff)' }}
+      >
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center justify-between w-full sm:w-auto gap-4">
             {isBulkMode ? (

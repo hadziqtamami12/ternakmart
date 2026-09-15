@@ -8,23 +8,36 @@ function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'p
   
   // High-contrast vibrant styling dynamically adapted to the active marketplace theme
   const activeIconWrapper = isAmber
-    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-amber-400/30 -translate-y-1 scale-105'
-    : 'bg-theme-primary text-theme-primary-contrast shadow-lg shadow-theme-primary/30 ring-2 ring-theme-primary/30 -translate-y-1 scale-105';
+    ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30 -translate-y-2 scale-105 rounded-full'
+    : 'bg-theme-primary text-theme-primary-contrast shadow-md shadow-theme-primary/30 -translate-y-2 scale-105 rounded-full';
   
   const activeText = isAmber
-    ? 'text-amber-600 dark:text-amber-400 font-black scale-105'
-    : 'text-theme-primary font-black scale-105';
-    
-  const activePill = isAmber ? 'bg-amber-500' : 'bg-theme-primary';
+    ? 'text-amber-600 dark:text-amber-400 font-bold'
+    : 'text-theme-primary font-bold';
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center justify-center flex-1 py-1 rounded-2xl transition-all duration-200 group focus:outline-none"
+      className="relative flex flex-col items-center justify-center flex-1 pt-1.5 pb-1.5 transition-all duration-200 group outline-none focus:outline-none focus:ring-0 focus-visible:outline-none active:outline-none border-0 select-none [-webkit-tap-highlight-color:transparent]"
     >
+      {/* Efek lengkungan halus ke atas untuk tab aktif tanpa garis/border warna */}
+      {isActive && (
+        <div className="absolute -top-[14px] left-1/2 -translate-x-1/2 pointer-events-none z-0">
+          <svg
+            viewBox="0 0 68 16"
+            className="w-[68px] h-[16px] overflow-visible drop-shadow-[0_-2px_4px_rgba(0,0,0,0.05)]"
+          >
+            <path
+              d="M 0 14 C 13 14, 17 2, 34 2 C 51 2, 55 14, 68 14 L 68 16 L 0 16 Z"
+              style={{ fill: 'var(--color-card, #ffffff)' }}
+            />
+          </svg>
+        </div>
+      )}
+
       <div
-        className={`relative p-2 rounded-2xl transition-all duration-300 ${
+        className={`relative z-10 p-2 rounded-2xl transition-all duration-300 ${
           isActive
             ? activeIconWrapper
             : 'text-theme-muted/70 hover:text-theme-text group-hover:bg-theme-bg/60'
@@ -32,23 +45,18 @@ function NavItem({ icon: Icon, label, isActive, onClick, badge, activeColor = 'p
       >
         <Icon className={`w-5 h-5 transition-transform duration-200 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
         {badge > 0 && (
-          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-theme-card shadow-sm animate-in zoom-in">
+          <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center ring-2 ring-theme-card shadow-sm animate-in zoom-in z-20">
             {badge > 99 ? '99+' : badge}
           </span>
         )}
       </div>
       <span
-        className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 ${
-          isActive ? activeText : 'text-theme-muted/80 font-semibold'
+        className={`text-[10px] mt-0.5 tracking-tight transition-all duration-200 relative z-10 ${
+          isActive ? activeText : 'text-theme-muted/80 font-medium'
         }`}
       >
         {label}
       </span>
-      {isActive ? (
-        <span className={`w-4 h-1 rounded-full ${activePill} mt-0.5 shadow-sm animate-in zoom-in duration-200`} />
-      ) : (
-        <span className="w-4 h-1 rounded-full bg-transparent mt-0.5" />
-      )}
     </button>
   );
 }
@@ -102,7 +110,7 @@ export default function FloatingBottomDock({ currentPage, onNavigate }) {
       }}
     >
       <nav
-        className="px-2 py-1.5 flex items-center justify-around max-w-lg mx-auto"
+        className="px-2 flex items-center justify-around max-w-lg mx-auto relative overflow-visible"
         aria-label="Navigasi Utama Mobile"
       >
         {/* 1. Beranda */}
