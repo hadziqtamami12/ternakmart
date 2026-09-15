@@ -48,7 +48,6 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
   const [activeTab, setActiveTab] = useState('ALL');
   const [bannerIndex, setBannerIndex] = useState(0);
   const [heroBanners, setHeroBanners] = useState([]);
-  const [addedToast, setAddedToast] = useState('');
 
   // Flash sale countdown timer state
   const [timeLeft, setTimeLeft] = useState({ hours: 4, minutes: 28, seconds: 45 });
@@ -183,8 +182,6 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
   const handleQuickAddToCart = async (e, animal) => {
     e.stopPropagation();
     await addToCart(animal);
-    setAddedToast(`✓ ${animal.title.split(' ')[0]} berhasil ditambahkan ke keranjang!`);
-    setTimeout(() => setAddedToast(''), 2500);
   };
 
   const defaultBanners = [
@@ -274,21 +271,6 @@ export default function HomePage({ onNavigate, onSelectAnimal }) {
 
   return (
     <div className="space-y-8 sm:space-y-12 overflow-x-hidden w-full max-w-full">
-      {/* Added to Cart Notification Toast (Centered Floating Bar for All Resolutions) */}
-      {addedToast && (
-        <div className="fixed top-4 sm:top-6 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 z-[99999] max-w-sm sm:max-w-md mx-auto bg-theme-card/95 backdrop-blur-md border border-theme-primary/40 text-theme-text px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between gap-3 animate-in slide-in-from-top duration-200">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <CheckCircle2 className="w-5 h-5 text-theme-primary flex-shrink-0" />
-            <span className="text-xs font-bold truncate">{addedToast}</span>
-          </div>
-          <button
-            onClick={() => onNavigate('cart')}
-            className="flex-shrink-0 px-3 py-1 bg-theme-primary text-white text-[11px] font-extrabold rounded-xl shadow-sm hover:opacity-90 transition-opacity"
-          >
-            Buka Keranjang
-          </button>
-        </div>
-      )}
 
       {/* 1. Full-Bleed Adaptive Hero Slider (Desktop: 100dvh, Mobile: 88dvh/90dvh with Peek Indicator) */}
       <section className="relative w-full overflow-hidden select-none -mt-0">

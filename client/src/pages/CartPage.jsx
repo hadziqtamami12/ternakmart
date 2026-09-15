@@ -141,7 +141,15 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
     }
   };
 
-  const handleItemClick = (item) => {
+  const handleItemClick = async (item) => {
+    const targetId = item.animal_id || item.id;
+    try {
+      const res = await api.get(`/animals/detail/${targetId}`);
+      if (res.success && res.data) {
+        if (onSelectAnimal) onSelectAnimal(res.data);
+        return;
+      }
+    } catch (e) {}
     if (onSelectAnimal) {
       onSelectAnimal(item);
     } else {
@@ -200,7 +208,7 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-64 sm:pb-48 overflow-x-hidden">
+    <div className="max-w-5xl mx-auto px-3.5 sm:px-6 py-6 sm:py-8 space-y-6 pb-64 sm:pb-48 overflow-x-hidden w-full max-w-full box-border">
       {/* Top Header & Mode Toggle Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-theme-border pb-4">
         <div>
@@ -279,17 +287,17 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
       {/* Store Grouped Items */}
       <div className="space-y-6">
         {Object.entries(storeGroups).map(([storeId, group]) => (
-          <div key={storeId} className="bg-theme-card border border-theme-border rounded-3xl p-4 sm:p-6 space-y-4 shadow-sm">
+          <div key={storeId} className="bg-theme-card border border-theme-border rounded-3xl p-3.5 sm:p-6 space-y-4 shadow-sm overflow-hidden w-full max-w-full">
             {/* Kandang / Store Header */}
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
-              <div className="flex items-center gap-2">
-                <Store className="w-4 h-4 text-theme-primary" />
-                <h2 className="text-sm font-bold text-theme-text">{group.store_name}</h2>
-                <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <div className="flex items-center gap-2 min-w-0">
+                <Store className="w-4 h-4 text-theme-primary flex-shrink-0" />
+                <h2 className="text-sm font-bold text-theme-text truncate">{group.store_name}</h2>
+                <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0">
                   {group.store_tier}
                 </span>
               </div>
-              <span className="text-[11px] text-theme-muted">{group.items.length} Ternak</span>
+              <span className="text-[11px] text-theme-muted flex-shrink-0">{group.items.length} Ternak</span>
             </div>
 
             {/* Animal Row Items */}
@@ -301,17 +309,17 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
 
                 return (
                   <div
-                    key={item.animal_id}
+                    key={item.animal_id || item.id}
                     onMouseDown={() => handleTouchStart(item.animal_id)}
                     onMouseUp={handleTouchEnd}
                     onTouchStart={() => handleTouchStart(item.animal_id)}
                     onTouchEnd={handleTouchEnd}
-                    className={`py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors rounded-2xl ${
-                      isBulkMode && isSelected ? 'bg-theme-primary-light/20 -mx-2 px-2' : ''
+                    className={`py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3.5 transition-colors rounded-2xl w-full max-w-full overflow-hidden ${
+                      isBulkMode && isSelected ? 'bg-theme-primary-light/20 p-2' : ''
                     }`}
                   >
                     {/* Checkbox (if bulk mode) + Thumbnail + Info */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0 w-full md:w-auto">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 w-full overflow-hidden">
                       {isBulkMode && (
                         <button
                           type="button"
@@ -329,21 +337,21 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
 
                       {/* Clickable Image -> Detail */}
                       <img
-                        src={(item.images && item.images[0]) || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'}
+                        src={(item.images && item.images[0]) || item.image_url || item.primary_image || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'}
                         alt={item.title}
                         onClick={() => handleItemClick(item)}
-                        className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover border border-theme-border flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                        className="w-16 h-16 sm:w-20 sm:h-20 min-w-16 min-h-16 max-w-16 max-h-16 sm:min-w-20 sm:min-h-20 sm:max-w-20 sm:max-h-20 rounded-2xl object-cover border border-theme-border flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                         title="Klik untuk melihat detail ternak"
                       />
 
                       {/* Clickable Title & Details */}
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 overflow-hidden">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold text-theme-primary bg-theme-primary-light px-2 py-0.5 rounded-md">
-                            {item.category}
+                          <span className="text-[10px] font-bold text-theme-primary bg-theme-primary-light px-2 py-0.5 rounded-md truncate max-w-[130px]">
+                            {item.breed || item.category || 'TERNAK'}
                           </span>
                           {item.skkh_verification_status && (
-                            <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5">
+                            <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-0.5 flex-shrink-0">
                               <ShieldCheck className="w-3 h-3" /> SKKH
                             </span>
                           )}
@@ -356,15 +364,15 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
                           {item.title}
                         </h3>
                         <p className="text-xs text-theme-muted mt-0.5 truncate">
-                          Bobot: {formatWeight(item.weight_kg)} • {formatRupiah(item.price)}/ekor
+                          {item.farm_address ? `${item.farm_address.split(',')[0]} • ` : ''}Bobot: {formatWeight(item.weight_kg)} • {formatRupiah(item.price)}/ekor
                         </p>
                       </div>
                     </div>
 
                     {/* Right Controls: Quantity Adjust + Subtotal + Actions */}
-                    <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-3.5 flex-wrap">
+                    <div className="flex items-center justify-between w-full md:w-auto gap-2.5 sm:gap-3 flex-wrap pt-2 md:pt-0 border-t md:border-t-0 border-theme-border/40">
                       {/* Quantity Stepper */}
-                      <div className="flex items-center gap-1.5 bg-theme-bg border border-theme-border rounded-xl p-1">
+                      <div className="flex items-center gap-1 bg-theme-bg border border-theme-border rounded-xl p-0.5 flex-shrink-0">
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.animal_id, itemQty - 1)}
@@ -387,8 +395,8 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
                       </div>
 
                       {/* Subtotal Item Price */}
-                      <div className="text-right min-w-[100px]">
-                        <span className="text-sm font-extrabold text-theme-primary block">
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xs sm:text-sm font-extrabold text-theme-primary block">
                           {formatRupiah(itemTotalPrice)}
                         </span>
                         {itemQty > 1 && (
@@ -398,26 +406,27 @@ export default function CartPage({ onNavigate, onSelectAnimal }) {
                         )}
                       </div>
 
-                      {/* Direct Single Checkout Button (when NOT in bulk mode) */}
-                      {!isBulkMode ? (
-                        <button
-                          onClick={() => handleDirectCheckout(item.animal_id)}
-                          className="px-3.5 py-2 rounded-xl bg-theme-primary hover:bg-theme-primary-hover text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-                          title="Beli langsung hewan ini sekarang"
-                        >
-                          <Zap className="w-3.5 h-3.5" />
-                          <span>Beli Langsung</span>
-                        </button>
-                      ) : null}
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 ml-auto md:ml-0 flex-shrink-0">
+                        {!isBulkMode ? (
+                          <button
+                            onClick={() => handleDirectCheckout(item.animal_id)}
+                            className="px-3 py-1.5 rounded-xl bg-theme-primary hover:bg-theme-primary-hover text-white text-[11px] font-bold transition-all shadow-sm flex items-center gap-1"
+                            title="Beli langsung hewan ini sekarang"
+                          >
+                            <Zap className="w-3 h-3" />
+                            <span>Beli</span>
+                          </button>
+                        ) : null}
 
-                      {/* Delete item button */}
-                      <button
-                        onClick={() => removeFromCart(item.animal_id)}
-                        className="p-2 text-theme-muted hover:text-red-500 rounded-xl transition-colors hover:bg-red-500/10"
-                        title="Hapus item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => removeFromCart(item.animal_id)}
+                          className="p-1.5 text-theme-muted hover:text-red-500 rounded-xl transition-colors hover:bg-red-500/10"
+                          title="Hapus item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

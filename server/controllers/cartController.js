@@ -13,28 +13,62 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    const items = cart.items_json || [];
+    let rawItems = cart.items_json || [];
+    if (typeof rawItems === 'string') {
+      try { rawItems = JSON.parse(rawItems); } catch (e) { rawItems = []; }
+    }
+    if (!Array.isArray(rawItems)) rawItems = [];
+
+    // Consolidate duplicate animal_id entries by summing their quantities
+    const consolidatedMap = new Map();
+    for (const it of rawItems) {
+      if (!it?.animal_id) continue;
+      const aId = String(it.animal_id);
+      if (consolidatedMap.has(aId)) {
+        const existing = consolidatedMap.get(aId);
+        existing.quantity = (existing.quantity || 1) + (it.quantity || 1);
+        if (it.notes && !existing.notes) existing.notes = it.notes;
+      } else {
+        consolidatedMap.set(aId, { ...it, quantity: it.quantity || 1 });
+      }
+    }
+    const cleanItems = Array.from(consolidatedMap.values());
+
+    if (cleanItems.length !== rawItems.length) {
+      await db.update('carts', cart.id, { items_json: cleanItems });
+    }
 
     // Populate animal and store details
     const populated = [];
-    for (const item of items) {
+    for (const item of cleanItems) {
       const animal = await db.findById('animals', item.animal_id);
       if (animal) {
         const store = await db.findById('stores', animal.store_id);
         populated.push({
+          id: animal.id,
           animal_id: animal.id,
+          slug: animal.slug,
           store_id: store ? store.id : animal.store_id,
           store_name: store ? store.store_name : 'Kandang Peternak',
           store_tier: store ? store.tier : 'BRONZE',
           farm_address: store ? store.farm_address : '',
+          store: store || { id: animal.store_id, store_name: 'Kandang Peternak', farm_address: '' },
           title: animal.title,
           category: animal.category,
           breed: animal.breed,
           weight_kg: animal.weight_kg,
-          price: animal.price,
-          images: animal.images,
-          is_qurban_eligible: animal.is_qurban_eligible,
+          age_months: animal.age_months,
+          gender: animal.gender,
+          teeth_poel: animal.teeth_poel || 'POEL_1',
+          vaccination_status: animal.vaccination_status,
           skkh_verification_status: animal.skkh_verification_status,
+          skkh_certificate_url: animal.skkh_certificate_url,
+          price: animal.price,
+          images: Array.isArray(animal.images) ? animal.images : [],
+          image_url: (animal.images && animal.images[0]) || '',
+          video_url: animal.video_url || '',
+          description: animal.description || '',
+          is_qurban_eligible: animal.is_qurban_eligible,
           quantity: item.quantity || 1,
           notes: item.notes || ''
         });
@@ -81,13 +115,37 @@ exports.addToCart = async (req, res) => {
     }
 
     let items = cart.items_json || [];
-    const itemIndex = items.findIndex(i => i.animal_id === animal_id);
-    if (itemIndex > -1) {
-      items[itemIndex].quantity = (items[itemIndex].quantity || 1) + addQty;
-      if (notes) items[itemIndex].notes = notes;
-    } else {
-      items.push({
-        animal_id,
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    const targetIdStr = String(animal_id);
+    let found = false;
+    const cleanItems = [];
+
+    for (const it of items) {
+      if (String(it.animal_id) === targetIdStr) {
+        if (!found) {
+          cleanItems.push({
+            ...it,
+            animal_id: animal.id,
+            store_id: animal.store_id,
+            quantity: (it.quantity || 1) + addQty,
+            notes: notes || it.notes || ''
+          });
+          found = true;
+        } else {
+          // Merge any pre-existing duplicate's quantity
+          cleanItems[cleanItems.length - 1].quantity += (it.quantity || 1);
+        }
+      } else {
+        cleanItems.push(it);
+      }
+    }
+
+    if (!found) {
+      cleanItems.push({
+        animal_id: animal.id,
         store_id: animal.store_id,
         quantity: addQty,
         notes: notes || '',
@@ -95,12 +153,12 @@ exports.addToCart = async (req, res) => {
       });
     }
 
-    await db.update('carts', cart.id, { items_json: items });
+    await db.update('carts', cart.id, { items_json: cleanItems });
 
     return res.json({
       success: true,
-      message: 'Hewan ternak berhasil dimasukkan ke keranjang belanja.',
-      data: { itemsCount: items.length }
+      message: 'Jumlah hewan ternak berhasil diperbarui di keranjang belanja.',
+      data: { itemsCount: cleanItems.length }
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Gagal menambahkan ternak ke keranjang.' });
@@ -119,11 +177,15 @@ exports.updateQuantity = async (req, res) => {
 
     const cart = carts[0];
     let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
 
     if (newQty <= 0) {
-      items = items.filter(i => i.animal_id !== animal_id);
+      items = items.filter(i => String(i.animal_id) !== String(animal_id));
     } else {
-      const idx = items.findIndex(i => i.animal_id === animal_id);
+      const idx = items.findIndex(i => String(i.animal_id) === String(animal_id));
       if (idx > -1) {
         items[idx].quantity = newQty;
       }
@@ -149,8 +211,14 @@ exports.bulkDelete = async (req, res) => {
     }
 
     const cart = carts[0];
-    let items = (cart.items_json || []).filter(i => !animal_ids.includes(i.animal_id));
-    await db.update('carts', cart.id, { items_json: items });
+    let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    const idSet = new Set(animal_ids.map(id => String(id)));
+    const cleanItems = items.filter(i => !idSet.has(String(i.animal_id)));
+    await db.update('carts', cart.id, { items_json: cleanItems });
 
     return res.json({ success: true, message: `${animal_ids.length} item berhasil dihapus dari keranjang.` });
   } catch (err) {
@@ -167,8 +235,13 @@ exports.removeFromCart = async (req, res) => {
     }
 
     const cart = carts[0];
-    let items = (cart.items_json || []).filter(i => i.animal_id !== animal_id);
-    await db.update('carts', cart.id, { items_json: items });
+    let items = cart.items_json || [];
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { items = []; }
+    }
+    if (!Array.isArray(items)) items = [];
+    const cleanItems = items.filter(i => String(i.animal_id) !== String(animal_id));
+    await db.update('carts', cart.id, { items_json: cleanItems });
 
     return res.json({
       success: true,

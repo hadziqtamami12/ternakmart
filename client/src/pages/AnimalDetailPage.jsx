@@ -69,7 +69,7 @@ export default function AnimalDetailPage({ animal, onBack, onNavigate, onStartCh
 
   const images = Array.isArray(animal.images) && animal.images.length > 0
     ? animal.images
-    : ['https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'];
+    : [animal.image_url || animal.primary_image || 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=800&auto=format&fit=crop&q=80'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-8 pb-32">
@@ -196,11 +196,11 @@ export default function AnimalDetailPage({ animal, onBack, onNavigate, onStartCh
             </div>
             <div className="p-3.5 rounded-2xl bg-theme-card border border-theme-border">
               <span className="text-[10px] uppercase tracking-wider text-theme-muted block font-semibold">Gigi Poel</span>
-              <span className="text-base font-extrabold text-theme-text mt-0.5 block">{animal.teeth_poel.replace('_', ' ')}</span>
+              <span className="text-base font-extrabold text-theme-text mt-0.5 block">{(animal.teeth_poel || 'POEL_1').replace('_', ' ')}</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-theme-card border border-theme-border">
               <span className="text-[10px] uppercase tracking-wider text-theme-muted block font-semibold">Usia Ternak</span>
-              <span className="text-base font-extrabold text-theme-text mt-0.5 block">{animal.age_months} Bulan</span>
+              <span className="text-base font-extrabold text-theme-text mt-0.5 block">{animal.age_months ? `${animal.age_months} Bulan` : '2 Tahun'}</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-theme-card border border-theme-border">
               <span className="text-[10px] uppercase tracking-wider text-theme-muted block font-semibold">Jenis Kelamin</span>

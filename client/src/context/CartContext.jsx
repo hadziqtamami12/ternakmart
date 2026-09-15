@@ -17,6 +17,39 @@ export function CartProvider({ children }) {
     setTimeout(() => setCartToast(''), 3000);
   };
 
+  // Helper to consolidate duplicate items by animal_id and sum their quantities
+  const consolidateItems = (items) => {
+    if (!Array.isArray(items)) return [];
+    const map = new Map();
+    for (const item of items) {
+      if (!item?.animal_id && !item?.id) continue;
+      const aId = String(item.animal_id || item.id);
+      const itemQty = Math.max(1, parseInt(item.quantity) || 1);
+      const itemImgs = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : (item.image_url ? [item.image_url] : (item.primary_image ? [item.primary_image] : []));
+
+      if (map.has(aId)) {
+        const existing = map.get(aId);
+        existing.quantity = (existing.quantity || 1) + itemQty;
+        if (item.notes && !existing.notes) existing.notes = item.notes;
+        if ((!existing.images || existing.images.length === 0) && itemImgs.length > 0) {
+          existing.images = itemImgs;
+          existing.image_url = itemImgs[0];
+        }
+      } else {
+        map.set(aId, {
+          ...item,
+          animal_id: aId,
+          quantity: itemQty,
+          images: itemImgs,
+          image_url: itemImgs[0] || item.image_url || item.primary_image || ''
+        });
+      }
+    }
+    return Array.from(map.values());
+  };
+
   // Load cart from server if authenticated, or localStorage if guest
   const fetchCart = async () => {
     if (isAuthenticated) {
@@ -31,9 +64,13 @@ export function CartProvider({ children }) {
               const guestItems = JSON.parse(guestSaved);
               if (Array.isArray(guestItems)) {
                 for (const gi of guestItems) {
-                  if (gi?.animal_id && !res.data.items.some(i => i.animal_id === gi.animal_id)) {
+                  if (gi?.animal_id && !res.data.items.some(i => String(i.animal_id) === String(gi.animal_id))) {
                     try {
-                      await api.post('/carts/add', { animal_id: gi.animal_id, notes: gi.notes });
+                      await api.post('/carts/add', {
+                        animal_id: gi.animal_id,
+                        notes: gi.notes,
+                        quantity: gi.quantity || 1
+                      });
                     } catch (addErr) {
                       // Silently catch if animal is unavailable or invalid
                     }
@@ -42,13 +79,21 @@ export function CartProvider({ children }) {
               }
               localStorage.removeItem('ternakmart_guest_cart');
               const refreshed = await api.get('/carts');
-              setCart(refreshed.data);
+              const cleanRefreshed = refreshed.data ? {
+                ...refreshed.data,
+                items: consolidateItems(refreshed.data.items)
+              } : { id: 'cart', items: [] };
+              setCart(cleanRefreshed);
               return;
             } catch (e) {
               localStorage.removeItem('ternakmart_guest_cart');
             }
           }
-          setCart(res.data);
+          const cleanData = {
+            ...res.data,
+            items: consolidateItems(res.data.items)
+          };
+          setCart(cleanData);
         }
       } catch (err) {
         console.warn('Could not fetch user cart:', err.message);
@@ -60,7 +105,21 @@ export function CartProvider({ children }) {
       const guestSaved = localStorage.getItem('ternakmart_guest_cart');
       if (guestSaved) {
         try {
-          setCart({ id: 'guest_cart', items: JSON.parse(guestSaved) });
+          const parsed = JSON.parse(guestSaved);
+          const normalized = (Array.isArray(parsed) ? parsed : []).map(i => {
+            const rawImgs = Array.isArray(i.images) && i.images.length > 0
+              ? i.images
+              : (i.image_url ? [i.image_url] : (i.primary_image ? [i.primary_image] : []));
+            return {
+              ...i,
+              animal_id: i.animal_id || i.id,
+              images: rawImgs,
+              image_url: rawImgs[0] || i.image_url || ''
+            };
+          });
+          const clean = consolidateItems(normalized);
+          setCart({ id: 'guest_cart', items: clean });
+          localStorage.setItem('ternakmart_guest_cart', JSON.stringify(clean));
         } catch (e) {
           setCart({ id: 'guest_cart', items: [] });
         }
@@ -91,10 +150,11 @@ export function CartProvider({ children }) {
     } else {
       // Guest Cart
       let animalObj = typeof animal === 'object' ? animal : null;
-      if (!animalObj) {
+      if (!animalObj || !animalObj.title) {
         try {
-          const res = await api.get(`/animals/detail/${animal}`);
-          if (res.success) animalObj = res.data;
+          const targetId = typeof animal === 'object' ? (animal.id || animal.animal_id) : animal;
+          const res = await api.get(`/animals/detail/${targetId}`);
+          if (res.success && res.data) animalObj = res.data;
         } catch (e) {}
       }
 
@@ -105,27 +165,69 @@ export function CartProvider({ children }) {
 
       const existingCart = localStorage.getItem('ternakmart_guest_cart');
       let currentItems = existingCart ? JSON.parse(existingCart) : [];
-      const itemIndex = currentItems.findIndex(i => i.animal_id === animalObj.id);
+      if (!Array.isArray(currentItems)) currentItems = [];
+
+      const targetIdStr = String(animalObj.id || animalObj.animal_id);
+      const itemIndex = currentItems.findIndex(i => String(i.animal_id || i.id) === targetIdStr);
+
+      const rawImages = Array.isArray(animalObj.images) && animalObj.images.length > 0
+        ? animalObj.images
+        : (animalObj.image_url ? [animalObj.image_url] : (animalObj.primary_image ? [animalObj.primary_image] : []));
+      const primaryImg = rawImages[0] || animalObj.image_url || animalObj.primary_image || '';
 
       if (itemIndex > -1) {
-        currentItems[itemIndex].quantity = (currentItems[itemIndex].quantity || 1) + qty;
+        currentItems[itemIndex].quantity = (parseInt(currentItems[itemIndex].quantity) || 1) + qty;
+        if (notes && !currentItems[itemIndex].notes) {
+          currentItems[itemIndex].notes = notes;
+        }
+        if (!currentItems[itemIndex].images || currentItems[itemIndex].images.length === 0) {
+          currentItems[itemIndex].images = rawImages;
+          currentItems[itemIndex].image_url = primaryImg;
+        }
+        if (!currentItems[itemIndex].category && animalObj.category) {
+          currentItems[itemIndex].category = animalObj.category;
+        }
+        if (!currentItems[itemIndex].breed && animalObj.breed) {
+          currentItems[itemIndex].breed = animalObj.breed;
+        }
       } else {
         currentItems.push({
-          id: `guest_item_${Date.now()}`,
-          animal_id: animalObj.id,
+          id: animalObj.id || `guest_item_${Date.now()}`,
+          animal_id: animalObj.id || targetIdStr,
+          slug: animalObj.slug || '',
           title: animalObj.title,
+          category: animalObj.category || 'TERNAK',
+          breed: animalObj.breed || '',
           price: animalObj.price,
           weight_kg: animalObj.weight_kg,
-          image_url: animalObj.primary_image || (animalObj.images && animalObj.images[0]) || '',
+          age_months: animalObj.age_months,
+          gender: animalObj.gender,
+          teeth_poel: animalObj.teeth_poel || 'POEL_1',
+          vaccination_status: animalObj.vaccination_status || '',
+          skkh_verification_status: animalObj.skkh_verification_status || false,
+          skkh_certificate_url: animalObj.skkh_certificate_url || '',
+          images: rawImages,
+          image_url: primaryImg,
+          video_url: animalObj.video_url || '',
+          description: animalObj.description || '',
+          is_qurban_eligible: animalObj.is_qurban_eligible || false,
           quantity: qty,
-          store_name: animalObj.store_name,
-          store_tier: animalObj.store_tier,
-          farm_address: animalObj.farm_address
+          store_id: animalObj.store_id || (animalObj.store && animalObj.store.id),
+          store_name: animalObj.store_name || animalObj.store?.store_name || 'Peternak Barokah',
+          store_tier: animalObj.store_tier || animalObj.store?.tier || 'BRONZE',
+          farm_address: animalObj.farm_address || animalObj.store?.farm_address || '',
+          store: animalObj.store || {
+            store_name: animalObj.store_name || 'Peternak Barokah',
+            farm_address: animalObj.farm_address || '',
+            tier: animalObj.store_tier || 'BRONZE'
+          },
+          notes: notes || ''
         });
       }
 
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(currentItems));
-      setCart({ id: 'guest_cart', items: currentItems });
+      const consolidated = consolidateItems(currentItems);
+      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(consolidated));
+      setCart({ id: 'guest_cart', items: consolidated });
       showToast(`✓ ${animalObj.title} ditambahkan ke keranjang!`);
       return { success: true };
     }
@@ -147,16 +249,19 @@ export function CartProvider({ children }) {
     } else {
       const existingCart = localStorage.getItem('ternakmart_guest_cart');
       let currentItems = existingCart ? JSON.parse(existingCart) : [];
+      if (!Array.isArray(currentItems)) currentItems = [];
 
+      const targetIdStr = String(animalId);
       if (qty === 0) {
-        currentItems = currentItems.filter(i => i.animal_id !== animalId);
+        currentItems = currentItems.filter(i => String(i.animal_id) !== targetIdStr);
       } else {
-        const item = currentItems.find(i => i.animal_id === animalId);
+        const item = currentItems.find(i => String(i.animal_id) === targetIdStr);
         if (item) item.quantity = qty;
       }
 
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(currentItems));
-      setCart({ id: 'guest_cart', items: currentItems });
+      const consolidated = consolidateItems(currentItems);
+      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(consolidated));
+      setCart({ id: 'guest_cart', items: consolidated });
       return { success: true };
     }
   };
@@ -176,9 +281,12 @@ export function CartProvider({ children }) {
     } else {
       const existingCart = localStorage.getItem('ternakmart_guest_cart');
       let currentItems = existingCart ? JSON.parse(existingCart) : [];
-      currentItems = currentItems.filter(i => !animalIds.includes(i.animal_id));
-      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(currentItems));
-      setCart({ id: 'guest_cart', items: currentItems });
+      if (!Array.isArray(currentItems)) currentItems = [];
+      const idSet = new Set(animalIds.map(id => String(id)));
+      currentItems = currentItems.filter(i => !idSet.has(String(i.animal_id)));
+      const consolidated = consolidateItems(currentItems);
+      localStorage.setItem('ternakmart_guest_cart', JSON.stringify(consolidated));
+      setCart({ id: 'guest_cart', items: consolidated });
       return { success: true };
     }
   };
@@ -199,14 +307,17 @@ export function CartProvider({ children }) {
     return { success: true };
   };
 
-  const totalCount = (cart.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+  // Unique product count: jika produk sama maka tetap dihitung 1
+  const uniqueCount = new Set((cart.items || []).map(i => String(i.animal_id || i.id))).size;
+  const totalQuantity = (cart.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   return (
     <CartContext.Provider
       value={{
         cart,
         items: cart.items || [],
-        count: totalCount,
+        count: uniqueCount,
+        totalQuantity,
         loading,
         isDrawerOpen,
         openDrawer: () => setIsDrawerOpen(true),
